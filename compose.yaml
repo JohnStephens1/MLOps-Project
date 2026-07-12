@@ -1,4 +1,6 @@
 services:
   app:
     build: .
+    volumes:
+      - .:/app
     command: uv run python main.py
