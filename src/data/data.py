@@ -18,6 +18,6 @@ def get_train_test_df(
         stratify=df.tag,
         test_size=test_size,
         random_state=seed
-        )
+    )
     
     return (train_df, test_df)
