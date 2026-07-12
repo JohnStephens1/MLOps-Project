@@ -9,3 +9,5 @@ build/
 dist/
 *.spec
 *.rar
+
+datasets/
