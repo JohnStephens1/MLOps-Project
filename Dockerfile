@@ -2,8 +2,6 @@ FROM ghcr.io/astral-sh/uv:python3.12-bookworm
 
 WORKDIR /app
 
-COPY . .
+COPY pyproject.toml uv.lock ./
 
 RUN uv sync
-
-CMD ["uv", "run", "python", "src/main.py"]

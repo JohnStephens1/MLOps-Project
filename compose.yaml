@@ -1,6 +1,7 @@
 services:
   app:
     build: .
+    working_dir: /app
     volumes:
       - .:/app
     command: uv run python src/main.py
