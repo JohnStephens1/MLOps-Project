@@ -1,5 +1,8 @@
+from data.data import *
+
+
 def main():
-    print("hello world!")
+    print(get_dataset().head())
 
 
 if __name__ == "__main__":
