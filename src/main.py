@@ -2,7 +2,11 @@ from data.data import *
 
 
 def main():
-    print(get_dataset().head())
+    df = get_dataset()
+    train, test = get_train_test_df(df)
+    print(
+        f'train: {train.head()}\ntest: {test.head()}'
+    )
 
 
 if __name__ == "__main__":
