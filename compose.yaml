@@ -1,0 +1,4 @@
+services:
+  app:
+    build: .
+    command: uv run python main.py
