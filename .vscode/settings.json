@@ -1,5 +1,6 @@
 {
     "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+    // "python.defaultInterpreterPath": "/usr/local/bin/python3.12",
     "python.analysis.diagnosticSeverityOverrides": {
         "reportUnknownVariableType": "none",
         "reportUnknownMemberType": "none",

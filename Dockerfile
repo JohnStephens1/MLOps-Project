@@ -5,3 +5,6 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 
 RUN uv sync
+
+CMD ["sleep", "infinity"]
+
