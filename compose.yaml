@@ -4,6 +4,20 @@ services:
     working_dir: /app
     volumes:
       - .:/app
-    # command: uv run python src/main.py
+    command: uv run python src/main.py
     # command sleep
     # command: tail -F anything
+  notebook:
+    profiles: ["notebook"]
+    ports:
+      - "8888:8888"
+    build: .
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: >
+      uv run --group notebook
+      jupyter lab
+      --ip=0.0.0.0
+      --allow-root
+      --no-browser
