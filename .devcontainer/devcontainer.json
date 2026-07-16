@@ -2,7 +2,10 @@
     "name": "MLOps-Project",
     "dockerComposeFile": "../compose.yaml",
     "service": "notebook",
+    "runServices": ["notebook"],
     "workspaceFolder": "/app",
+
+    "overrideCommand": true,
 
     "shutdownAction": "stopCompose",
 

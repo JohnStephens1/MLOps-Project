@@ -1,16 +1,19 @@
 services:
   app:
     profiles: ["main"]
-    build: .
+    build:
+      context: .
+      target: base
     working_dir: /app
     volumes:
       - .:/app
-    # command: uv run python src/main.py
-    # command sleep
-    # command: tail -F anything
+    command: uv run python src/main.py
   notebook:
     profiles: ["notebook"]
-    build: .
+    build:
+      context: .
+      target: notebook
     working_dir: /app
     volumes:
       - .:/app
+    command: uv run jupyter lab --ip=0.0.0.0 --allow-root --no-browser
