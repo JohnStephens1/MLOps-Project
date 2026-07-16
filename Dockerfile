@@ -6,5 +6,6 @@ COPY pyproject.toml uv.lock ./
 
 RUN uv sync
 
-# CMD ["sleep", "infinity"]
+ENTRYPOINT []
+CMD ["sleep", "infinity"]
 
