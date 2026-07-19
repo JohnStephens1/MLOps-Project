@@ -43,6 +43,12 @@ from pathlib import Path
 # graphing
 
 # %% [markdown]
+# data checking
+# - right format for
+#     - created_on : date_time
+#
+
+# %% [markdown]
 # #### definitions
 
 # %% [markdown]
@@ -83,7 +89,6 @@ def preprocess_text(
     ) -> pd.DataFrame:
     # TODO
     # could filter stopwords, special chars, multi-space
-    # created_on to date_time
     # tag to target ; 0 1 2 3
     # bert for text
 
@@ -96,7 +101,25 @@ def preprocess_text(
 def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
     df = df.dropna()
     df = df.drop_duplicates()
+
+    df['created_on'] = pd.to_datetime(df['created_on'])
     df = preprocess_text(df)
+
+    return df
+
+
+# %%
+def add_time_features(df: pd.DataFrame) -> pd.DataFrame:
+    # TODO
+    # add type features?
+        # df["year"] = df["created_on"].dt.year
+    # add cyclical features?
+        # df["hour_sin"] = np.sin(2*np.pi*df["created_on"].dt.hour/24)
+        # df["hour_cos"] = np.cos(2*np.pi*df["created_on"].dt.hour/24)
+
+        # df["month_sin"] = np.sin(2*np.pi*df["created_on"].dt.month/12)
+        # df["month_cos"] = np.cos(2*np.pi*df["created_on"].dt.month/12)
+    # add age feature?
 
     return df
 
@@ -121,21 +144,19 @@ def data_pipeline() -> pd.DataFrame:
 # #### running 
 
 # %%
-def testing_smth(
-        df: pd.DataFrame,
-        target_cols: list[str] = ["title", "description", "tag"]
-    ) -> pd.DataFrame:
-    # created_on to date_time
-    # tag to target ; 0 1 2 3
-
-    df[target_cols] = df[target_cols].apply(lambda col: col.apply(preprocess_string))
-
-    return df
-
-
 df = data_pipeline()
-df = testing_smth(df)
 df.head()
+
+# %%
+df.created_on[0]
+
+# %%
+df_raw = get_raw_dataset()
+df_raw.created_on
+
+
+# %%
+pd.to_datetime(df_raw.created_on[0])
 
 # %% [markdown]
 # #### exploration
