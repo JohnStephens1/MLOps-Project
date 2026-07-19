@@ -105,42 +105,40 @@ def set_sin_cos_features(df: pd.DataFrame, result_col_name: str, input_col: pd.S
 
 
 # %%
-def add_time_features(df: pd.DataFrame, target_col: str = "created_on") -> pd.DataFrame:
+def add_time_features(df: pd.DataFrame, time_col: str = "created_on") -> pd.DataFrame:
     # hour / 24 - cyclic
-    df = set_sin_cos_features(df, "hour_of_day", df[target_col].dt.hour, 24)
+    df = set_sin_cos_features(df, "hour_of_day", df[time_col].dt.hour, 24)
 
     # day / 7 - cyclic
-    df = set_sin_cos_features(df, "day_of_week", df[target_col].dt.day_of_week, 7)
+    df = set_sin_cos_features(df, "day_of_week", df[time_col].dt.day_of_week, 7)
 
     # month / 12 - cyclic
-    df = set_sin_cos_features(df, "month_of_year", df[target_col].dt.month, 12)
+    df = set_sin_cos_features(df, "month_of_year", df[time_col].dt.month, 12)
 
     # # weekend?
-    df["is_weekend"] = df[target_col].dt.day_of_week >= 5
+    df["is_weekend"] = df[time_col].dt.day_of_week >= 5
 
     # days since start
-    df["days_since_start"] = (df[target_col] - df[target_col].min()).dt.days
-
-    # remove target_col
-    df = df.drop(target_col, axis=1)
+    df["days_since_start"] = (df[time_col] - df[time_col].min()).dt.days
 
     return df
 
 
 # %%
-def add_features(df: pd.DataFrame) -> pd.DataFrame:
+def add_features(df: pd.DataFrame, time_col: str) -> pd.DataFrame:
     df["text"] = df.title + " " + df.description
-    df = add_time_features(df)
+    df = add_time_features(df, time_col)
 
     return df
 
 
 # %%
 def data_pipeline(
-    df: pd.DataFrame = get_raw_dataset()
+    df: pd.DataFrame = get_raw_dataset(),
+    time_col: str = "created_on"
 ) -> pd.DataFrame:
     df = preprocess_data(df)
-    df = add_features(df)
+    df = add_features(df, time_col)
 
     return df
 
@@ -210,9 +208,12 @@ def get_encoded_target(
 # %%
 def get_model_data(
     df: pd.DataFrame = get_raw_dataset(),
+    time_col: str = "created_on",
     target_col: str = "tag"
 ) -> tuple[MinMaxScaler, LabelEncoder, pd.DataFrame, pd.DataFrame, np.typing.ArrayLike, np.typing.ArrayLike]:
-    df = data_pipeline(df)
+    df = data_pipeline(df, time_col)
+    
+    df = df.drop(['id', time_col], axis=1)
     
     X_train, X_test, y_train, y_test = get_train_test_df(df, target_col)
     scaler, X_train, X_test = get_scaled_target(X_train, X_test)
