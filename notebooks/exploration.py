@@ -31,28 +31,24 @@ from pathlib import Path
 # #### ideas / todos
 
 # %%
-# steps to greatness
-# load data into pd
-# preprocess
-# - check data types
-# - filter trash
+# potential additions
+# - check data types, everywhere
+# - expand on text cleanup, e.g. filter stopwords, special chars, multi-space
+# - classify
+# - target embeddings, difference of text_emb - target_emb * classes etc.
+# - weighted embeds, e.g. 0.7*title, 0.3*desc
 
-# feature engineering update
+# %%
+# extra
+# create documentation
 
-# potential class for data processing
+# %%
+# potential issue: row change when loading text embeddings
 
-# model
-# could embed target
-# keep only text embed, remove other title + desc
-# weighted embeds, e.g. 0.7*title, 0.3*desc
-
-# graphing
-
-# %% [markdown]
+# %%
 # data checking
-# - right format for
-#     - created_on : date_time
-#
+# - created_on : date_time
+# ...
 
 # %% [markdown]
 # #### definitions
@@ -77,8 +73,6 @@ def preprocess_text(
         df: pd.DataFrame,
         target_cols: list[str] = ["title", "description", "tag"]
     ) -> pd.DataFrame:
-    # TODO
-    # could filter stopwords, special chars, multi-space
 
     df[target_cols] = df[target_cols].apply(lambda col: col.apply(preprocess_string))
 
