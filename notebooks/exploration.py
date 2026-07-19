@@ -134,7 +134,7 @@ def data_pipeline(
 # ##### model data
 
 # %%
-def split_X_y(
+def get_X_y(
     df: pd.DataFrame,
     target_col: str = "tag"
 ) -> tuple[pd.DataFrame, pd.Series]:
@@ -146,11 +146,13 @@ def split_X_y(
 
 # %%
 def get_train_test_df(
-    X: pd.DataFrame,
-    y: pd.Series,
+    df: pd.DataFrame,
+    target_col: str = "tag",
     test_size: float = 0.2,
     seed: int = 1234
 ) -> tuple[pd.DataFrame, pd.DataFrame, np.typing.ArrayLike, np.typing.ArrayLike]:
+    X, y = get_X_y(df, target_col)
+
     X_train, X_test, y_train, y_test = train_test_split(
         X,
         y,
@@ -182,9 +184,7 @@ def get_model_data(
 ) -> tuple[LabelEncoder, pd.DataFrame, pd.DataFrame, np.typing.ArrayLike, np.typing.ArrayLike]:
     df = data_pipeline(df)
     
-    X, y = split_X_y(df, target_col)
-    X_train, X_test, y_train, y_test = get_train_test_df(X, y)
-
+    X_train, X_test, y_train, y_test = get_train_test_df(df, target_col)
     encoder, y_train, y_test = get_encoded_target(y_train, y_test)
     
     return encoder, X_train, X_test, y_train, y_test
@@ -199,6 +199,12 @@ df.head()
 
 # %%
 encoder, X_train, X_test, y_train, y_test = get_model_data()
+
+# %%
+X_test.head()
+
+# %%
+print(y_test)
 
 # %% [markdown]
 # #### exploration
