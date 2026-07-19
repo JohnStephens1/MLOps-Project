@@ -21,7 +21,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 # import tensorflow as tf
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
 
@@ -97,10 +97,12 @@ def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
 # ##### feature engineering
 
 # %%
-def add_time_features(df: pd.DataFrame) -> pd.DataFrame:
+def add_time_features(df: pd.DataFrame, target_col: str = "created_on") -> pd.DataFrame:
     # TODO
     # add type features?
         # df["year"] = df["created_on"].dt.year
+    # add age
+    # df["age"] = df[target_col].
     # add cyclical features?
         # df["hour_sin"] = np.sin(2*np.pi*df["created_on"].dt.hour/24)
         # df["hour_cos"] = np.cos(2*np.pi*df["created_on"].dt.hour/24)
@@ -198,6 +200,10 @@ df = data_pipeline()
 df.head()
 
 # %%
+# max 2020
+df.created_on.dt.year.min()
+
+# %%
 encoder, X_train, X_test, y_train, y_test = get_model_data()
 
 # %%
@@ -210,10 +216,12 @@ print(y_test)
 # #### exploration
 
 # %%
-pd.get_dummies(df.tag)
-
-# %%
-df.shape
+# created on distribution
+df["created_on"].hist(bins=50)
+plt.title("Created On")
+plt.xlabel("Date")
+plt.ylabel("Count")
+plt.show()
 
 # %%
 df.head()
@@ -239,14 +247,3 @@ set(df.tag)
 # %%
 df.isna().sum()
 # no missing values
-
-# %%
-df.created_on[0]
-
-# %%
-df_raw = get_raw_dataset()
-df_raw.created_on
-
-
-# %%
-pd.to_datetime(df_raw.created_on[0])
