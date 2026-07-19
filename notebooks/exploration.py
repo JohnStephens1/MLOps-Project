@@ -77,17 +77,26 @@ def get_train_test_df(
 
 
 # %%
+def preprocess_text(
+        df: pd.DataFrame,
+        target_cols: list[str] = ["title", "description", "tag"]
+    ) -> pd.DataFrame:
+    # TODO
+    # could filter stopwords, special chars, multi-space
+    # created_on to date_time
+    # tag to target ; 0 1 2 3
+    # bert for text
+
+    df[target_cols] = df[target_cols].apply(lambda col: col.apply(preprocess_string))
+
+    return df
+
+
+# %%
 def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
     df = df.dropna()
     df = df.drop_duplicates()
-
-    string_cols = df.select_dtypes(include=["object", "string"]).columns
-    df[string_cols] = df[string_cols].apply(lambda col: col.apply(preprocess_string))
-
-    # could filter stopwords, special chars, multi-space
-    # one hot encoding for tag
-    # df.tag = 
-    # bert for text
+    df = preprocess_text(df)
 
     return df
 
@@ -116,13 +125,9 @@ def testing_smth(
         df: pd.DataFrame,
         target_cols: list[str] = ["title", "description", "tag"]
     ) -> pd.DataFrame:
-    # modify title, description, tag
     # created_on to date_time
     # tag to target ; 0 1 2 3
 
-    target_cols = ["title", "description", "tag"]
-
-    # string_cols = df.select_dtypes(include=["object", "string"]).columns
     df[target_cols] = df[target_cols].apply(lambda col: col.apply(preprocess_string))
 
     return df
