@@ -19,7 +19,7 @@
 # %%
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import LabelEncoder, MinMaxScaler
 # import tensorflow as tf
 import matplotlib.pyplot as plt
 import numpy as np
@@ -180,6 +180,21 @@ def get_train_test_df(
 
 
 # %%
+def get_scaled_target(
+    X_train: pd.DataFrame,
+    X_test: pd.DataFrame,
+    range: tuple[int, int] = (0, 1),
+    target_col: str = "days_since_start"
+) -> tuple[MinMaxScaler, pd.DataFrame, pd.DataFrame]:
+    scaler = MinMaxScaler(range)
+
+    X_train[target_col] = scaler.fit_transform(X_train[[target_col]])
+    X_test[target_col] = scaler.transform(X_test[[target_col]])
+
+    return scaler, X_train, X_test
+
+
+# %%
 def get_encoded_target(
     y_train: np.typing.ArrayLike,
     y_test: np.typing.ArrayLike
@@ -196,13 +211,14 @@ def get_encoded_target(
 def get_model_data(
     df: pd.DataFrame = get_raw_dataset(),
     target_col: str = "tag"
-) -> tuple[LabelEncoder, pd.DataFrame, pd.DataFrame, np.typing.ArrayLike, np.typing.ArrayLike]:
+) -> tuple[MinMaxScaler, LabelEncoder, pd.DataFrame, pd.DataFrame, np.typing.ArrayLike, np.typing.ArrayLike]:
     df = data_pipeline(df)
     
     X_train, X_test, y_train, y_test = get_train_test_df(df, target_col)
+    scaler, X_train, X_test = get_scaled_target(X_train, X_test)
     encoder, y_train, y_test = get_encoded_target(y_train, y_test)
     
-    return encoder, X_train, X_test, y_train, y_test
+    return scaler, encoder, X_train, X_test, y_train, y_test
 
 
 # %% [markdown]
@@ -213,53 +229,8 @@ df = data_pipeline()
 df.head()
 
 # %%
-df["days_since_start"].max()
-
-# %%
-# max 2020
-df.created_on.dt.year.min()
-
-# %%
-df = data_pipeline()
-
-# hour / 24 - cyclic
-df = set_sin_cos_features(df, "hour_of_day", df["created_on"].dt.hour, 24)
-
-# day / 7 - cyclic
-df = set_sin_cos_features(df, "day_of_week", df["created_on"].dt.day_of_week, 7)
-
-# month / 12 - cyclic
-df = set_sin_cos_features(df, "month_of_year", df["created_on"].dt.month, 12)
-
-# # weekend?
-df["is_weekend"] = df["created_on"].dt.day_of_week >= 5
-
-# days since start
-df["days_since_start"] = (df["created_on"] - df["created_on"].min()).dt.days
-
-# %%
-df["created_on"].dt.hour.max()
-
-# %%
-df.head()
-
-# %%
-(df["created_on"] - df["created_on"].min()).dt.days
-
-# %%
-df.head()
-
-# %%
-df["days_since_start"]
-
-# %%
-encoder, X_train, X_test, y_train, y_test = get_model_data()
-
-# %%
-X_test.head()
-
-# %%
-print(y_test)
+scaler, encoder, X_train, X_test, y_train, y_test = get_model_data()
+X_train.head()
 
 
 # %% [markdown]
