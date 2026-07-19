@@ -51,16 +51,6 @@ from pathlib import Path
 # %% [markdown]
 # #### definitions
 
-# %% [markdown]
-# ##### dataprep
-
-# %%
-def preprocess_string(string: str) -> str:
-    string = string.lower().strip()
-
-    return string
-
-
 # %%
 def get_raw_dataset(ds_path: Path = Path("../datasets/dataset.csv")) -> pd.DataFrame:
     return pd.read_csv(ds_path)
@@ -80,6 +70,16 @@ def get_train_test_df(
     )
 
     return train_df, test_df
+
+
+# %% [markdown]
+# ##### data preprocessing
+
+# %%
+def preprocess_string(string: str) -> str:
+    string = string.lower().strip()
+
+    return string
 
 
 # %%
@@ -108,6 +108,9 @@ def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+# %% [markdown]
+# ##### feature engineering
+
 # %%
 def add_time_features(df: pd.DataFrame) -> pd.DataFrame:
     # TODO
@@ -127,6 +130,7 @@ def add_time_features(df: pd.DataFrame) -> pd.DataFrame:
 # %%
 def add_features(df: pd.DataFrame) -> pd.DataFrame:
     df["text"] = df.title + " " + df.description
+    df = add_time_features(df)
 
     return df
 
@@ -146,17 +150,6 @@ def data_pipeline() -> pd.DataFrame:
 # %%
 df = data_pipeline()
 df.head()
-
-# %%
-df.created_on[0]
-
-# %%
-df_raw = get_raw_dataset()
-df_raw.created_on
-
-
-# %%
-pd.to_datetime(df_raw.created_on[0])
 
 # %% [markdown]
 # #### exploration
@@ -197,3 +190,14 @@ set(df.tag)
 # %%
 df.isna().sum()
 # no missing values
+
+# %%
+df.created_on[0]
+
+# %%
+df_raw = get_raw_dataset()
+df_raw.created_on
+
+
+# %%
+pd.to_datetime(df_raw.created_on[0])
