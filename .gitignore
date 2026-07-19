@@ -10,5 +10,6 @@ dist/
 *.spec
 *.rar
 
+*.ipynb
+
 datasets/
-notebooks/
