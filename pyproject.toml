@@ -14,6 +14,7 @@ dependencies = [
 notebook = [
     "ipykernel>=7.3.0",
     "jupyterlab>=4.6.1",
+    "jupytext>=1.19.4",
     "matplotlib>=3.11.0",
     "seaborn>=0.13.2",
 ]

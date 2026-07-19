@@ -15,6 +15,7 @@
                 "ms-python.python",
                 "ms-python.vscode-pylance",
                 "charliermarsh.ruff",
+                "caenrigen.jupytext-sync",
                 "ms-toolsai.jupyter"
             ]
         }
