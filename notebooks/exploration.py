@@ -97,20 +97,32 @@ def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
 # ##### feature engineering
 
 # %%
-def add_time_features(df: pd.DataFrame, target_col: str = "created_on") -> pd.DataFrame:
-    # year is always 2020
-    # TODO
-    # add type features?
-        # df["year"] = df["created_on"].dt.year
-    # add age
-    # df["age"] = df[target_col].
-    # add cyclical features?
-        # df["hour_sin"] = np.sin(2*np.pi*df["created_on"].dt.hour/24)
-        # df["hour_cos"] = np.cos(2*np.pi*df["created_on"].dt.hour/24)
+def set_sin_cos_features(df: pd.DataFrame, result_col_name: str, input_col: pd.Series, time_span: int) -> pd.DataFrame:
+    df[result_col_name + "_sin"] = np.sin(2 * np.pi * input_col / time_span)
+    df[result_col_name + "_cos"] = np.cos(2 * np.pi * input_col / time_span)
 
-        # df["month_sin"] = np.sin(2*np.pi*df["created_on"].dt.month/12)
-        # df["month_cos"] = np.cos(2*np.pi*df["created_on"].dt.month/12)
-    # add age feature?
+    return df
+
+
+# %%
+def add_time_features(df: pd.DataFrame, target_col: str = "created_on") -> pd.DataFrame:
+    # hour / 24 - cyclic
+    df = set_sin_cos_features(df, "hour_of_day", df[target_col].dt.hour, 24)
+
+    # day / 7 - cyclic
+    df = set_sin_cos_features(df, "day_of_week", df[target_col].dt.day_of_week, 7)
+
+    # month / 12 - cyclic
+    df = set_sin_cos_features(df, "month_of_year", df[target_col].dt.month, 12)
+
+    # # weekend?
+    df["is_weekend"] = df[target_col].dt.day_of_week >= 5
+
+    # days since start
+    df["days_since_start"] = (df[target_col] - df[target_col].min()).dt.days
+
+    # remove target_col
+    df = df.drop(target_col, axis=1)
 
     return df
 
@@ -128,7 +140,7 @@ def data_pipeline(
     df: pd.DataFrame = get_raw_dataset()
 ) -> pd.DataFrame:
     df = preprocess_data(df)
-    # df = add_features(df)
+    df = add_features(df)
 
     return df
 
@@ -201,34 +213,38 @@ df = data_pipeline()
 df.head()
 
 # %%
-# max 2020
-df.created_on.dt.year.min()
-
+df["days_since_start"].max()
 
 # %%
-def set_sin_cos_features(df: pd.DataFrame, result_col_name: str, input_col: pd.Series, time_span: int) -> pd.DataFrame:
-    df[result_col_name + "_sin"] = np.sin(2 * np.pi * input_col / time_span)
-    df[result_col_name + "_cos"] = np.cos(2 * np.pi * input_col / time_span)
-
-    return df
-
+# max 2020
+df.created_on.dt.year.min()
 
 # %%
 df = data_pipeline()
 
 # hour / 24 - cyclic
-df = set_sin_cos_features(df, "hour_per_day", df["created_on"].dt.day_of_week, 7)
-# day / 7 - cyclic
-# day of week / 7? - cyclic
-# # weekend?
+df = set_sin_cos_features(df, "hour_of_day", df["created_on"].dt.hour, 24)
 
-# day of week / 7? - cyclic
-df["day_of_week_sin"] = df["created_on"].dt.day_of_week
+# day / 7 - cyclic
+df = set_sin_cos_features(df, "day_of_week", df["created_on"].dt.day_of_week, 7)
+
+# month / 12 - cyclic
+df = set_sin_cos_features(df, "month_of_year", df["created_on"].dt.month, 12)
+
+# # weekend?
+df["is_weekend"] = df["created_on"].dt.day_of_week >= 5
 
 # days since start
-df["days_since_start"] = (
-    df["created_on"] - df["created_on"].min()
-).dt.days
+df["days_since_start"] = (df["created_on"] - df["created_on"].min()).dt.days
+
+# %%
+df["created_on"].dt.hour.max()
+
+# %%
+df.head()
+
+# %%
+(df["created_on"] - df["created_on"].min()).dt.days
 
 # %%
 df.head()
