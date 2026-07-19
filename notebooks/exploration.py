@@ -19,8 +19,10 @@
 # %%
 import pandas as pd
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
 # import tensorflow as tf
 # import matplotlib.pyplot as plt
+import numpy as np
 from pathlib import Path
 
 
@@ -56,22 +58,6 @@ def get_raw_dataset(ds_path: Path = Path("../datasets/dataset.csv")) -> pd.DataF
     return pd.read_csv(ds_path)
 
 
-# %%
-def get_train_test_df(
-    df: pd.DataFrame = get_raw_dataset(),
-    test_size: float = 0.2,
-    seed: int = 1234
-) -> tuple[pd.DataFrame, pd.DataFrame]:
-    train_df, test_df = train_test_split(
-        df,
-        stratify=df.tag,
-        test_size=test_size,
-        random_state=seed
-    )
-
-    return train_df, test_df
-
-
 # %% [markdown]
 # ##### data preprocessing
 
@@ -104,6 +90,7 @@ def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
 
     df['created_on'] = pd.to_datetime(df['created_on'])
     df = preprocess_text(df)
+    # df['tag'] = 
 
     return df
 
@@ -136,12 +123,73 @@ def add_features(df: pd.DataFrame) -> pd.DataFrame:
 
 
 # %%
-def data_pipeline() -> pd.DataFrame:
-    df = get_raw_dataset()
+def data_pipeline(
+    df: pd.DataFrame = get_raw_dataset()
+) -> pd.DataFrame:
     df = preprocess_data(df)
     # df = add_features(df)
 
     return df
+
+
+# %% [markdown]
+# ##### model data
+
+# %%
+def split_X_y(
+    df: pd.DataFrame,
+    target_col: str = "tag"
+) -> tuple[pd.DataFrame, pd.Series]:
+    X = df.drop(target_col, axis=1)
+    y = df[target_col]
+    
+    return X, y
+
+
+# %%
+def get_train_test_df(
+    X: pd.DataFrame,
+    y: pd.Series,
+    test_size: float = 0.2,
+    seed: int = 1234
+) -> tuple[pd.DataFrame, pd.DataFrame, np.typing.ArrayLike, np.typing.ArrayLike]:
+    X_train, X_test, y_train, y_test = train_test_split(
+        X,
+        y,
+        stratify=y,
+        test_size=test_size,
+        random_state=seed
+    )
+
+    return X_train, X_test, y_train, y_test
+
+
+# %%
+def get_encoded_target(
+    y_train: np.typing.ArrayLike,
+    y_test: np.typing.ArrayLike
+) -> tuple[LabelEncoder, np.typing.ArrayLike, np.typing.ArrayLike]:
+    encoder = LabelEncoder()
+
+    y_train = encoder.fit_transform(y_train)
+    y_test = encoder.transform(y_test)
+    
+    return encoder, y_train, y_test
+
+
+# %%
+def get_model_data(
+    df: pd.DataFrame = get_raw_dataset(),
+    target_col: str = "tag"
+) -> tuple[LabelEncoder, pd.DataFrame, pd.DataFrame, np.typing.ArrayLike, np.typing.ArrayLike]:
+    df = data_pipeline(df)
+    
+    X, y = split_X_y(df, target_col)
+    X_train, X_test, y_train, y_test = get_train_test_df(X, y)
+
+    encoder, y_train, y_test = get_encoded_target(y_train, y_test)
+    
+    return encoder, X_train, X_test, y_train, y_test
 
 
 # %% [markdown]
@@ -151,17 +199,14 @@ def data_pipeline() -> pd.DataFrame:
 df = data_pipeline()
 df.head()
 
+# %%
+encoder, X_train, X_test, y_train, y_test = get_model_data()
+
 # %% [markdown]
 # #### exploration
 
 # %%
 pd.get_dummies(df.tag)
-
-# %%
-train_df, test_df = get_train_test_df()
-
-# %%
-test_df.shape
 
 # %%
 df.shape
