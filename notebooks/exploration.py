@@ -204,17 +204,34 @@ df.head()
 # max 2020
 df.created_on.dt.year.min()
 
+
 # %%
+def set_sin_cos_features(df: pd.DataFrame, result_col_name: str, input_col: pd.Series, time_span: int) -> pd.DataFrame:
+    df[result_col_name + "_sin"] = np.sin(2 * np.pi * input_col / time_span)
+    df[result_col_name + "_cos"] = np.cos(2 * np.pi * input_col / time_span)
+
+    return df
+
+
+# %%
+df = data_pipeline()
+
 # hour / 24 - cyclic
+df = set_sin_cos_features(df, "hour_per_day", df["created_on"].dt.day_of_week, 7)
 # day / 7 - cyclic
 # day of week / 7? - cyclic
 # # weekend?
 
+# day of week / 7? - cyclic
+df["day_of_week_sin"] = df["created_on"].dt.day_of_week
 
 # days since start
 df["days_since_start"] = (
     df["created_on"] - df["created_on"].min()
 ).dt.days
+
+# %%
+df.head()
 
 # %%
 df["days_since_start"]
