@@ -98,6 +98,7 @@ def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
 
 # %%
 def add_time_features(df: pd.DataFrame, target_col: str = "created_on") -> pd.DataFrame:
+    # year is always 2020
     # TODO
     # add type features?
         # df["year"] = df["created_on"].dt.year
@@ -204,6 +205,21 @@ df.head()
 df.created_on.dt.year.min()
 
 # %%
+# hour / 24 - cyclic
+# day / 7 - cyclic
+# day of week / 7? - cyclic
+# # weekend?
+
+
+# days since start
+df["days_since_start"] = (
+    df["created_on"] - df["created_on"].min()
+).dt.days
+
+# %%
+df["days_since_start"]
+
+# %%
 encoder, X_train, X_test, y_train, y_test = get_model_data()
 
 # %%
@@ -212,16 +228,40 @@ X_test.head()
 # %%
 print(y_test)
 
+
 # %% [markdown]
 # #### exploration
 
 # %%
-# created on distribution
-df["created_on"].hist(bins=50)
-plt.title("Created On")
-plt.xlabel("Date")
-plt.ylabel("Count")
-plt.show()
+def show_created_on_distribution():
+    df["created_on"].hist(bins=50)
+    plt.title("Created On")
+    plt.xlabel("Date")
+    plt.ylabel("Count")
+    plt.show()
+
+show_created_on_distribution()
+
+
+# %%
+def show_entries_by_weekday():
+    weekday_counts = (
+        df["created_on"]
+        .dt.day_name()
+        .value_counts()
+        .reindex([
+            "Monday", "Tuesday", "Wednesday",
+            "Thursday", "Friday", "Saturday", "Sunday"
+        ])
+    )
+
+    weekday_counts.plot(kind="bar")
+    plt.title("Entries by Weekday")
+    plt.xlabel("Weekday")
+    plt.ylabel("Number of entries")
+    plt.show()
+
+show_entries_by_weekday()
 
 # %%
 df.head()
