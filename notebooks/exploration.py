@@ -31,6 +31,12 @@ from pathlib import Path
 # #### ideas / todos
 
 # %%
+# NEXT
+# use ID col as unique identifier, merge with embeddings to create guaranteed association
+# implement ids in train test split, or just
+# df = df.set_index("id", drop=False)
+
+# %%
 # potential additions
 # - check data types, everywhere
 # - expand on text cleanup, e.g. filter stopwords, special chars, multi-space
