@@ -18,11 +18,11 @@
 
 # %%
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder, MinMaxScaler
-# import tensorflow as tf
 import matplotlib.pyplot as plt
 import numpy as np
+from sentence_transformers import SentenceTransformer
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder, MinMaxScaler
 from pathlib import Path
 
 
@@ -41,6 +41,9 @@ from pathlib import Path
 # potential class for data processing
 
 # model
+# could embed target
+# keep only text embed, remove other title + desc
+# weighted embeds, e.g. 0.7*title, 0.3*desc
 
 # graphing
 
@@ -125,9 +128,30 @@ def add_time_features(df: pd.DataFrame, time_col: str = "created_on") -> pd.Data
 
 
 # %%
-def add_features(df: pd.DataFrame, time_col: str) -> pd.DataFrame:
-    df["text"] = df.title + " " + df.description
+def add_text_embeddings(
+    df: pd.DataFrame,
+    text_col: str,
+    model_str: str = "all-MiniLM-L6-v2"
+) -> pd.DataFrame:
+    model = SentenceTransformer(model_str)
+
+    embeddings = model.encode(df[text_col].tolist(), convert_to_numpy=True)
+    
+    vector_df = pd.DataFrame(
+        embeddings,
+        columns=[f"text_{i}" for i in range(embeddings.shape[1])]
+    )
+
+    df = pd.concat([df, vector_df], axis=1)
+
+    return df
+
+
+# %%
+def add_features(df: pd.DataFrame, time_col: str, text_col: str = "text") -> pd.DataFrame:
+    df[text_col] = df.title + " " + df.description
     df = add_time_features(df, time_col)
+    df = add_text_embeddings(df, text_col)
 
     return df
 
@@ -213,7 +237,7 @@ def get_model_data(
 ) -> tuple[MinMaxScaler, LabelEncoder, pd.DataFrame, pd.DataFrame, np.typing.ArrayLike, np.typing.ArrayLike]:
     df = data_pipeline(df, time_col)
     
-    df = df.drop(['id', time_col], axis=1)
+    df = df.drop(['id', time_col, "title", "description", "text"], axis=1)
     
     X_train, X_test, y_train, y_test = get_train_test_df(df, target_col)
     scaler, X_train, X_test = get_scaled_target(X_train, X_test)
