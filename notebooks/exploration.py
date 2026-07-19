@@ -75,7 +75,6 @@ def preprocess_text(
     ) -> pd.DataFrame:
     # TODO
     # could filter stopwords, special chars, multi-space
-    # tag to target ; 0 1 2 3
     # bert for text
 
     df[target_cols] = df[target_cols].apply(lambda col: col.apply(preprocess_string))
@@ -90,7 +89,6 @@ def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
 
     df['created_on'] = pd.to_datetime(df['created_on'])
     df = preprocess_text(df)
-    # df['tag'] = 
 
     return df
 
