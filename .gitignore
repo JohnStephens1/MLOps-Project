@@ -13,3 +13,4 @@ dist/
 *.ipynb
 
 datasets/
+data/

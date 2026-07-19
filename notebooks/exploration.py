@@ -20,6 +20,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 from sentence_transformers import SentenceTransformer
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler
@@ -78,7 +79,6 @@ def preprocess_text(
     ) -> pd.DataFrame:
     # TODO
     # could filter stopwords, special chars, multi-space
-    # bert for text
 
     df[target_cols] = df[target_cols].apply(lambda col: col.apply(preprocess_string))
 
@@ -128,18 +128,35 @@ def add_time_features(df: pd.DataFrame, time_col: str = "created_on") -> pd.Data
 
 
 # %%
-def add_text_embeddings(
+def get_embeddings(
     df: pd.DataFrame,
     text_col: str,
-    model_str: str = "all-MiniLM-L6-v2"
-) -> pd.DataFrame:
-    model = SentenceTransformer(model_str)
+    model_str: str = "all-MiniLM-L6-v2",
+    text_embeddings_path: Path = Path("../data/embeddings/text_embeddings.npy"),
+    regenerate: bool = False
+) -> np.ndarray:
+    if os.path.exists(text_embeddings_path) and not regenerate:
+        embeddings = np.load(text_embeddings_path)
+    else:
+        model = SentenceTransformer(model_str)
 
-    embeddings = model.encode(df[text_col].tolist(), convert_to_numpy=True)
+        embeddings = model.encode(df[text_col].tolist(), convert_to_numpy=True)
+        
+        np.save(text_embeddings_path, embeddings)
+    
+    return embeddings
+
+
+# %%
+def add_text_embeddings(
+    df: pd.DataFrame,
+    text_col: str
+) -> pd.DataFrame:
+    embeddings = get_embeddings(df, text_col)
     
     vector_df = pd.DataFrame(
         embeddings,
-        columns=[f"text_{i}" for i in range(embeddings.shape[1])]
+        columns=[f"{text_col}_{i}" for i in range(embeddings.shape[1])]
     )
 
     df = pd.concat([df, vector_df], axis=1)
