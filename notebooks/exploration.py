@@ -349,7 +349,7 @@ def u_can_dance_if_u_want_to(df: pd.DataFrame, text_col: str = "title"):
     ids_loaded, embeddings_loaded = load_ids_embeddings()
     intersecting_ids, ids_to_generate = get_intersecting_complementing_ids(df, ids_loaded)
 
-    new_embeddings = get_new_embeddings(df, ids_to_generate, text_col)
+    new_embeddings = np.array([]) if ids_to_generate.empty else get_new_embeddings(df, ids_to_generate, text_col)
     
     embeddings_dic = get_embeddings_dic(
         ids_loaded,
@@ -372,8 +372,8 @@ def u_can_dance_if_u_want_to(df: pd.DataFrame, text_col: str = "title"):
 
 test_df: pd.DataFrame = pd.read_pickle("test_df")
 test_df = test_df.set_index("id")
-test_df.loc[16] = "helloo"
-test_df.loc[192] = "helloooo"
+# test_df.loc[16] = "helloo"
+# test_df.loc[192] = "helloooo"
 
 # result = add_text_embeddings2(test_df, "title")
 result = u_can_dance_if_u_want_to(test_df, "title")
