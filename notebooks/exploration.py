@@ -267,6 +267,456 @@ def get_model_data(
 # #### running 
 
 # %%
+# questions
+# keep id as column or use as index?
+# keep embeddings as one col or expand to 384?
+
+# %%
+# let's make the id thing happen
+
+# %%
+def get_test_df():
+    df = get_raw_dataset()
+    df = df.drop(["created_on", "description", "tag"], axis=1)
+
+    return df[:10]
+
+
+# %%
+df = get_test_df()
+
+
+# %%
+# save test_df
+def save_df(df: pd.DataFrame):
+    df.to_pickle("test_df")
+
+
+# %%
+# load test_df
+test_df = pd.read_pickle("test_df")
+
+# %%
+# smth embeddings
+model = SentenceTransformer("all-MiniLM-L6-v2")
+embeddings = model.encode(test_df["title"].tolist(), convert_to_numpy=True)
+
+# np.save(text_embeddings_path, embeddings)
+
+
+# %%
+# saving
+np.savez(
+    "test_embeddings.npz",
+    ids=test_df.index.values,
+    embeddings=embeddings,
+    model="all-MiniLM-L6-v2"
+)
+
+# %%
+# loading
+loaded_test_embeddings = np.load("test_embeddings.npz")
+
+# %%
+# retrieve columns via
+loaded_test_embeddings["ids"]
+loaded_test_embeddings["embeddings"]
+
+# %%
+loaded_test_embeddings["embeddings"]
+
+# %%
+test_df: pd.DataFrame = pd.read_pickle("test_df")
+test_df = test_df.set_index("id")
+test_df
+
+
+# %%
+def uhh_simple_embeddings_yeah_that() -> pd.DataFrame:
+    # nan after
+    # ids in df ! in embeddings
+    # ids in embeddings ! in df
+
+
+    # get_test_df
+    test_df: pd.DataFrame = pd.read_pickle("test_df")
+    test_df = test_df.set_index("id")
+
+    cache = np.load("test_embeddings.npz", allow_pickle=True)
+    embeddings_df = pd.DataFrame(
+        cache["embeddings"][::2],
+        index=cache["ids"][::2],
+        columns=[f"embedding_{i}" for i in range(cache["embeddings"][::2].shape[1])]
+    )
+
+    # merge_w_test_df_on_index
+    result_df = test_df.join(
+        embeddings_df
+    )
+
+    return result_df
+    
+
+output = uhh_simple_embeddings_yeah_that()
+
+
+# %%
+def lets_b_smart_embeddings() -> pd.DataFrame:
+    test_df: pd.DataFrame = pd.read_pickle("test_df")
+    test_df = test_df.set_index("id")
+
+    cache = np.load("test_embeddings.npz")
+    cache_embeddings = cache["embeddings"]
+    cache_ids = cache["ids"]
+
+    
+
+    
+    embeddings_df = pd.DataFrame(
+        cache["embeddings"],
+        index=cache["ids"],
+        columns=[f"embedding_{i}" for i in range(cache["embeddings"].shape[1])]
+    )
+
+    result_df = test_df.join(
+        embeddings_df
+    )
+
+    return result_df
+    
+output = lets_b_smart_embeddings()
+
+# %%
+# I NEED TO TEST SMTH ;-;
+test_df: pd.DataFrame = pd.read_pickle("test_df")
+test_df = test_df.set_index("id")
+
+cache = np.load("test_embeddings.npz")
+cache_embeddings = cache["embeddings"]
+cache_ids = cache["ids"]
+
+# %%
+test_df.index
+
+# %%
+cache_ids
+
+# %%
+# hi_im_something = np.array([6, 9, 15, 25, 27, 28, 29, 45, 61])
+hi_im_something = [6, 9, 15, 25, 27, 28, 29, 45, 61]
+
+# %%
+test_df.index.isin(hi_im_something)
+
+# %%
+print(f"test_df_index: {test_df.index}\nother: {hi_im_something}")
+
+# %%
+# all ids in dataframe and in emb -> to load
+index_intersections = test_df.index.intersection(hi_im_something)
+# all ids - result -> to generate
+remainder = test_df.index.difference(index_intersections)
+
+# %%
+# I NEED TO TEST SMTH ;-;
+test_df: pd.DataFrame = pd.read_pickle("test_df")
+test_df = test_df.set_index("id")
+
+cache = np.load("test_embeddings.npz")
+cache_embeddings = cache["embeddings"]
+cache_ids = cache["ids"]
+cache_dict = dict(zip(cache_ids, cache_embeddings))
+
+# all ids in dataframe and in emb -> to load
+index_intersection = test_df.index.intersection(cache_ids)
+# all ids - result -> to generate
+remainder = test_df.index.difference(index_intersections)
+
+intersection_emb_dic = {id: emb for id, emb in zip(cache_ids, cache_embeddings) if id in index_intersection}
+
+# embedding_df = pd.DataFrame(
+#     cached_embeddings,
+#     index=cached_ids,
+#     columns=[f"embedding_{i}" for i in range(cached_embeddings.shape[1])]
+# )
+
+# %%
+def i_give_up():
+    test_df: pd.DataFrame = pd.read_pickle("test_df")
+    test_df = test_df.set_index("id")
+
+    cache = np.load("test_embeddings.npz")
+    cache_embeddings = cache["embeddings"]
+    cache_ids = cache["ids"]
+
+    embedding_df = pd.DataFrame(
+        cache_embeddings,
+        index=cache_ids,
+        columns=[f"embedding_{i}" for i in range(cache_embeddings.shape[1])]
+    )
+
+    missing_ids = test_df.loc[
+        ~test_df.index.isin(embedding_df.index),
+        "id"
+    ]
+
+    missing_rows = test_df[test_df.index.isin(missing_ids)]
+
+    new_embeddings = model.encode(
+        missing_rows["title"].tolist(),
+        convert_to_numpy=True
+    )
+
+    new_embedding_df = pd.DataFrame(
+        new_embeddings,
+        index=missing_rows["id"],
+        columns=embedding_df.columns
+    )
+
+    embedding_df = pd.concat(
+        [embedding_df, new_embedding_df]
+    )
+
+    embedding_df = embedding_df[~embedding_df.index.duplicated(keep="last")]
+
+    return embedding_df
+
+i_give_up()
+
+
+# %%
+def get_embeddings2(
+    df: pd.DataFrame,
+    text_col: str,
+    model_str: str = "all-MiniLM-L6-v2",
+    text_embeddings_path: Path = Path("../data/embeddings/text_embeddings.npy"),
+    regenerate: bool = False
+) -> np.ndarray:
+    if os.path.exists(text_embeddings_path) and not regenerate:
+        embeddings = np.load(text_embeddings_path)
+    else:
+        model = SentenceTransformer(model_str)
+
+        embeddings = model.encode(df[text_col].tolist(), convert_to_numpy=True)
+        
+        np.save(text_embeddings_path, embeddings)
+    
+    return embeddings
+
+
+def add_text_embeddings2(
+    df: pd.DataFrame,
+    text_col: str
+) -> pd.DataFrame:
+    embeddings = get_embeddings2(df, text_col)
+    
+    vector_df = pd.DataFrame(
+        embeddings,
+        columns=[f"{text_col}_{i}" for i in range(embeddings.shape[1])]
+    )
+
+    df = pd.concat([df, vector_df], axis=1)
+
+    return df
+
+
+# %%
+def smth_smth(
+        df: pd.DataFrame,
+        embedding_path: Path,
+        text_col: str = "text"
+    ) -> pd.DataFrame:
+
+    if os.path.exists(embedding_path):
+        cache = np.load(embedding_path)
+        
+        cache_emb_df = pd.DataFrame(
+            cache["embeddings"],
+            index=cache["ids"],
+            columns=[f"embedding_{i}" for i in range(cache["embeddings"].shape[1])]
+        )
+
+        missing_df = df.loc[
+            ~df.index.isin(cache_emb_df.index)
+        ]
+
+        new_embeddings = model.encode(
+            missing_df[text_col].tolist(),
+            convert_to_numpy=True
+        )
+
+        new_embedding_df = pd.DataFrame(
+            new_embeddings,
+            index=missing_df.index,
+            columns=cache_emb_df.columns
+        )
+
+        embedding_df = cache_emb_df.combine_first(new_embedding_df)
+
+        result_df = test_df.combine_first(embedding_df).combine_first(new_embedding_df)
+    else:
+        embeddings = model.encode(
+            df[text_col].tolist(),
+            convert_to_numpy=True
+        )
+
+        embedding_df = pd.DataFrame(
+            embeddings,
+            index=df.index,
+            columns=[f"embedding_{i}" for i in range(embeddings.shape[1])]
+        )
+
+        result_df = df.combine_first(embedding_df)
+    
+    # better to check if save makes sense
+    # np.savez(embeddings_path) WITH BONUS
+    
+    return result_df
+
+# smth_smth()
+
+
+# %%
+test_df: pd.DataFrame = pd.read_pickle("test_df")
+test_df = test_df.set_index("id")
+test_df.loc[16] = "helloo"
+
+smth_smth(test_df, Path("test_embeddings.npz"), "title")
+
+# %%
+
+test_df: pd.DataFrame = pd.read_pickle("test_df")
+test_df = test_df.set_index("id")
+test_df.loc[16] = "helloo"
+# test_df.loc[15] = "helooooooo"
+test_df.loc[18] = "helooooooo"
+
+cache = np.load("test_embeddings.npz")
+cache_embeddings = cache["embeddings"]
+cache_ids = cache["ids"]
+
+embedding_df = pd.DataFrame(
+    cache_embeddings,
+    index=cache_ids,
+    columns=[f"embedding_{i}" for i in range(cache_embeddings.shape[1])]
+)
+
+missing_df = test_df.loc[
+    ~test_df.index.isin(embedding_df.index)
+]
+
+new_embeddings = model.encode(
+    missing_df["title"].tolist(),
+    convert_to_numpy=True
+)
+
+new_embedding_df = pd.DataFrame(
+    new_embeddings,
+    index=missing_df.index,
+    columns=embedding_df.columns
+)
+
+# embedding_df = pd.concat(
+#     [test_df, embedding_df, new_embedding_df]
+# )
+
+result_df = test_df.combine_first(embedding_df).combine_first(new_embedding_df)
+
+result_df
+
+# %%
+embedding_df
+
+# %%
+list(intersection_emb_dic.keys())
+
+# %%
+intersection_emb_dic.values()
+
+# %%
+embedding_df = pd.DataFrame(
+    intersection_emb_dic,
+    index=list(intersection_emb_dic.keys()),
+    columns=[f"embedding_{i}" for i in range(384)]
+)
+
+# %%
+embedding_df
+
+# %%
+intersection_emb_dic
+
+# %%
+ya = [cache_dict[x] for x in index_intersection]
+
+# %%
+ya = [cache_dict.get(x) for x in test_df.index]
+
+# %%
+ya
+
+# %%
+
+# %%
+
+# %%
+
+# test_df.index.union(hi_im_something)
+# test_df.index.difference(hi_im_something)
+remainder
+
+# %%
+
+
+
+
+# embeddings_df = pd.DataFrame(
+#     cache["embeddings"],
+#     index=cache["ids"],
+#     columns=[f"embedding_{i}" for i in range(cache["embeddings"].shape[1])]
+# )
+
+# result_df = test_df.join(
+#     embeddings_df
+# )
+
+# result_df
+
+# %%
+output
+
+# %%
+loaded_test_embeddings["embeddings"].shape[1]
+
+# %%
+# goal: make test_df with embeddings
+# also, create situation where one row is ignored intentionally
+funky_dic = dict(zip(loaded_test_embeddings["ids"], loaded_test_embeddings["embeddings"]))
+# test_df["embedding"] = 
+
+# %%
+test_df.index.values
+
+# %%
+embeddings
+
+# %%
+test_df = test_df.set_index("id")
+test_df
+
+# %%
+# good to know
+test_df.index  # gives ids
+test_df.loc[6]  # gives entry @ id 6
+test_df.iloc[0]  # gives 0th row
+
+# %%
+df.shape
+
+# %%
+# end testing
+
+# %%
 df = data_pipeline()
 df.head()
 

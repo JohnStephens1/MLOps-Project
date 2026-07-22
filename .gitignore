@@ -14,3 +14,6 @@ dist/
 
 datasets/
 data/
+
+test_df
+test_embeddings.npz
