@@ -305,7 +305,6 @@ embeddings = model.encode(test_df["title"].tolist(), convert_to_numpy=True)
 
 
 # %%
-# saving
 np.savez(
     "test_embeddings.npz",
     ids=test_df.index.values,
@@ -318,17 +317,8 @@ np.savez(
 loaded_test_embeddings = np.load("test_embeddings.npz")
 
 # %%
-# retrieve columns via
-loaded_test_embeddings["ids"]
-loaded_test_embeddings["embeddings"]
-
-# %%
-loaded_test_embeddings["embeddings"]
-
-# %%
 test_df: pd.DataFrame = pd.read_pickle("test_df")
 test_df = test_df.set_index("id")
-test_df
 
 
 # %%
@@ -336,7 +326,6 @@ def uhh_simple_embeddings_yeah_that() -> pd.DataFrame:
     # nan after
     # ids in df ! in embeddings
     # ids in embeddings ! in df
-
 
     # get_test_df
     test_df: pd.DataFrame = pd.read_pickle("test_df")
@@ -355,7 +344,6 @@ def uhh_simple_embeddings_yeah_that() -> pd.DataFrame:
     )
 
     return result_df
-    
 
 output = uhh_simple_embeddings_yeah_that()
 
@@ -366,11 +354,8 @@ def lets_b_smart_embeddings() -> pd.DataFrame:
     test_df = test_df.set_index("id")
 
     cache = np.load("test_embeddings.npz")
-    cache_embeddings = cache["embeddings"]
-    cache_ids = cache["ids"]
-
-    
-
+    # cache_embeddings = cache["embeddings"]
+    # cache_ids = cache["ids"]
     
     embeddings_df = pd.DataFrame(
         cache["embeddings"],
@@ -394,12 +379,6 @@ test_df = test_df.set_index("id")
 cache = np.load("test_embeddings.npz")
 cache_embeddings = cache["embeddings"]
 cache_ids = cache["ids"]
-
-# %%
-test_df.index
-
-# %%
-cache_ids
 
 # %%
 # hi_im_something = np.array([6, 9, 15, 25, 27, 28, 29, 45, 61])
@@ -485,39 +464,194 @@ i_give_up()
 
 
 # %%
+# save and load fun
+def save_embeddings(
+    ids: np.typing.ArrayLike,
+    embeddings: np.typing.ArrayLike,
+    file_path: Path = Path("test_embeddings.npz"),
+    model: str = "all-MiniLM-L6-v2"
+):
+    np.savez(
+        file_path,
+        ids=ids,
+        embeddings=embeddings,
+        model=model
+    )
+
+
+# %%
+def load_ids_embeddings(file_path: Path = Path("test_embeddings.npz")) -> tuple[np.ndarray, np.ndarray]:
+    loaded_file = np.load(file_path)
+
+    return loaded_file['ids'], loaded_file['embeddings']
+
+
+# %%
+# loaded["ids"] -> array([ ... ])
+# loaded['embeddings'] -> array ([[ ... ]]), shape (10, 384)
+
+# %%
+id, x = load_ids_embeddings()
+type(id)
+
+# %%
+type(df.index.array)
+
+
+# %%
+# clean ;-;
+
+# %%
 def get_embeddings2(
     df: pd.DataFrame,
     text_col: str,
     model_str: str = "all-MiniLM-L6-v2",
-    text_embeddings_path: Path = Path("../data/embeddings/text_embeddings.npy"),
+    text_embeddings_path: Path = Path("test_embeddings.npz"),
+    # text_embeddings_path: Path = Path("../data/embeddings/text_embeddings.npy"),
     regenerate: bool = False
-) -> np.ndarray:
+) -> tuple[np.ndarray, np.ndarray]:
+    # if file, loads file. no check, no filler.
     if os.path.exists(text_embeddings_path) and not regenerate:
-        embeddings = np.load(text_embeddings_path)
+        ids, embeddings = load_ids_embeddings(text_embeddings_path)
     else:
         model = SentenceTransformer(model_str)
 
+        ids = df.index.to_numpy()
         embeddings = model.encode(df[text_col].tolist(), convert_to_numpy=True)
         
-        np.save(text_embeddings_path, embeddings)
+        save_embeddings(ids, embeddings)
     
-    return embeddings
+    return ids, embeddings
 
 
+# %%
 def add_text_embeddings2(
     df: pd.DataFrame,
     text_col: str
 ) -> pd.DataFrame:
-    embeddings = get_embeddings2(df, text_col)
+    ids, embeddings = get_embeddings2(df, text_col)
     
     vector_df = pd.DataFrame(
         embeddings,
+        index=ids,
         columns=[f"{text_col}_{i}" for i in range(embeddings.shape[1])]
     )
 
-    df = pd.concat([df, vector_df], axis=1)
+    # df = pd.concat([df, vector_df], axis=1)
+    df = df.combine_first(vector_df)
 
     return df
+
+
+# %%
+# mb just one more u know ;-;
+def this_time_surely(
+        df: pd.DataFrame,
+        embedding_path: Path,
+        text_col: str = "text"
+    ):
+    if os.path.exists(embedding_path):
+        # load the ids, embeddings
+        ids_loaded, embeddings_loaded = load_ids_embeddings()
+
+        # check what ids are missing
+        
+
+        # generate the missing ids
+        # merge the loaded and new embs
+        
+        # format for dataframe
+        # merge with original dataframe
+
+        # somewhere save
+
+        # return merged
+        pass
+    else:
+        # if there's _no_file
+        # generate embs for all rows
+        # format if necessary
+        # save embs
+        # return df
+        pass
+
+
+# %%
+# u can dance if u want to
+def u_can_dance_if_u_want_to(df: pd.DataFrame, text_col: str = "title"):
+    ids_loaded, embeddings_loaded = load_ids_embeddings()
+
+    # all ids in dataframe and in emb -> to load
+    intersecting_ids = df.index.intersection(ids_loaded.tolist())
+    # all ids - result -> to generate
+    ids_to_generate = df.index.difference(intersecting_ids)
+
+    intersecting_ids_dict = {
+        id: emb for id, emb in zip(ids_loaded, embeddings_loaded) if id in intersecting_ids
+    }
+    embedding_dim = next(iter(intersecting_ids_dict.values()), np.array([])).shape[0]
+
+    intersecting_embeddings_df = pd.DataFrame.from_dict(
+        intersecting_ids_dict,
+        orient="index",
+        columns=[f'{text_col}_{i}' for i in range(embedding_dim)]
+    )
+
+    text_to_generate = df.loc[ids_to_generate][text_col].to_list()
+
+    new_embeddings = model.encode(
+        text_to_generate,
+        convert_to_numpy=True
+    )
+
+    new_embeddings_dict = dict(zip(ids_to_generate, new_embeddings))
+    new_embedding_dim = next(iter(new_embeddings_dict.values()), np.array([])).shape[0]
+
+    new_embeddings_df = pd.DataFrame.from_dict(
+        new_embeddings_dict,
+        orient="index",
+        columns=[f'{text_col}_{i}' for i in range(new_embedding_dim)]
+    )
+
+    df_result = df.combine_first(intersecting_embeddings_df).combine_first(new_embeddings_df)
+
+    return df_result
+
+test_df: pd.DataFrame = pd.read_pickle("test_df")
+test_df = test_df.set_index("id")
+test_df.loc[16] = "helloo"
+test_df.loc[192] = "helloooo"
+
+# result = add_text_embeddings2(test_df, "title")
+result = u_can_dance_if_u_want_to(test_df, "title")
+result
+
+    # embedding_df_loaded = pd.DataFrame(
+    #     cached_embeddings,
+    #     index=cached_ids,
+    #     columns=[f"embedding_{i}" for i in range(cached_embeddings.shape[1])]
+    # )
+
+# %%
+next(iter(result.values())).shape[0]
+
+# %%
+np.array([]).shape[0]
+
+# %%
+test_df: pd.DataFrame = pd.read_pickle("test_df")
+test_df = test_df.set_index("id")
+test_df.loc[16] = "helloo"
+
+# result = add_text_embeddings2(test_df, "title")
+result = u_can_dance_if_u_want_to(test_df, "title")
+result
+
+# %%
+# clean ;-;
+
+# %%
+test_df
 
 
 # %%
@@ -656,20 +790,11 @@ ya = [cache_dict.get(x) for x in test_df.index]
 ya
 
 # %%
-
-# %%
-
-# %%
-
 # test_df.index.union(hi_im_something)
 # test_df.index.difference(hi_im_something)
 remainder
 
 # %%
-
-
-
-
 # embeddings_df = pd.DataFrame(
 #     cache["embeddings"],
 #     index=cache["ids"],
