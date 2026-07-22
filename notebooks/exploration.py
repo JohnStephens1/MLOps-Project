@@ -362,8 +362,8 @@ scaler, encoder, X_train, X_test, y_train, y_test = get_model_data()
 X_train.head()
 
 
-# %%
-# testing
+# %% [markdown]
+# #### embeddings experiments
 
 # %%
 def get_test_df():
@@ -374,12 +374,7 @@ def get_test_df():
 
 
 # %%
-df = get_test_df()
-
-
-# %%
-# save test_df
-def save_df(df: pd.DataFrame):
+def save_test_df(df: pd.DataFrame):
     df.to_pickle("test_df")
 
 
@@ -438,11 +433,12 @@ def test_add_text_embeddings(file_path: Path = Path("test_embeddings.npz")):
     return result
 
 
-# %%
-# end testing
-
 # %% [markdown]
 # #### exploration
+
+# %%
+df["created_on"]
+
 
 # %%
 def show_created_on_distribution():
