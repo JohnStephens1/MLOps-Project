@@ -31,10 +31,8 @@ from pathlib import Path
 # #### ideas / todos
 
 # %%
-# NEXT
-# use ID col as unique identifier, merge with embeddings to create guaranteed association
-# implement ids in train test split, or just
-# df = df.set_index("id", drop=False)
+# UP NEXT
+# models
 
 # %%
 # potential additions
@@ -47,9 +45,7 @@ from pathlib import Path
 # %%
 # extra
 # create documentation
-
-# %%
-# potential issue: row change when loading text embeddings
+# proper tests
 
 # %%
 # data checking
