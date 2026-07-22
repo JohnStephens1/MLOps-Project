@@ -267,6 +267,126 @@ def get_model_data(
 # #### running 
 
 # %%
+# ALL FNs FOR THE FOLLOWING BEAUTY
+
+# %%
+def load_ids_embeddings(file_path: Path = Path("test_embeddings.npz")) -> tuple[np.ndarray, np.ndarray]:
+    loaded_file = np.load(file_path)
+
+    return loaded_file['ids'], loaded_file['embeddings']
+
+
+# %%
+def get_intersecting_complementing_ids(
+    df: pd.DataFrame,
+    ids_loaded: np.ndarray
+) -> tuple[pd.Index, pd.Index]:
+    # all ids in input df and embeddings -> to load
+    intersecting_ids = df.index.intersection(ids_loaded.tolist())
+    # all ids - intersecting ids -> to generate
+    ids_to_generate = df.index.difference(intersecting_ids)
+
+    return intersecting_ids, ids_to_generate
+
+
+# %%
+def get_new_embeddings(
+    df: pd.DataFrame,
+    ids_to_generate: pd.Index,
+    text_col: str,
+    model_str: str = "all-MiniLM-L6-v2",
+) -> np.ndarray:
+    model = SentenceTransformer(model_str)
+    
+    text_to_generate = df.loc[ids_to_generate][text_col].to_list()
+
+    new_embeddings = model.encode(
+        text_to_generate,
+        convert_to_numpy=True
+    )
+
+    return new_embeddings
+
+
+# %%
+def get_embeddings_dic(
+        ids_loaded: np.ndarray,
+        embeddings_loaded: np.ndarray,
+        intersecting_ids: pd.Index,
+        ids_to_generate: pd.Index,
+        new_embeddings: np.ndarray
+) -> dict[pd.Index, np.ndarray]:
+    # format id: embedding
+    intersecting_ids_dic = {
+        id: emb for id, emb in zip(ids_loaded, embeddings_loaded) if id in intersecting_ids
+    }
+    new_embeddings_dic = dict(zip(ids_to_generate, new_embeddings))
+    embeddings_dic = intersecting_ids_dic | new_embeddings_dic
+
+    return embeddings_dic
+
+
+
+# %%
+def get_embeddings_df(
+    embeddings_dic: dict[pd.Index, np.ndarray],
+    text_col: str
+) -> pd.DataFrame:
+    embedding_dim = next(iter(embeddings_dic.values()), np.array([])).shape[0]
+    embeddings_df = pd.DataFrame.from_dict(
+        embeddings_dic,
+        orient="index",
+        columns=[f'{text_col}_{i}' for i in range(embedding_dim)]
+    )
+
+    return embeddings_df
+    
+
+
+# %%
+# u can dance if u want to
+def u_can_dance_if_u_want_to(df: pd.DataFrame, text_col: str = "title"):
+    ids_loaded, embeddings_loaded = load_ids_embeddings()
+    intersecting_ids, ids_to_generate = get_intersecting_complementing_ids(df, ids_loaded)
+
+    new_embeddings = get_new_embeddings(df, ids_to_generate, text_col)
+    
+    embeddings_dic = get_embeddings_dic(
+        ids_loaded,
+        embeddings_loaded,
+        intersecting_ids,
+        ids_to_generate,
+        new_embeddings
+    )
+
+    embeddings_df = get_embeddings_df(
+        embeddings_dic,
+        text_col
+    )
+
+    # merge by index with input df
+    df_result = df.combine_first(embeddings_df)
+
+    return df_result
+
+
+test_df: pd.DataFrame = pd.read_pickle("test_df")
+test_df = test_df.set_index("id")
+test_df.loc[16] = "helloo"
+test_df.loc[192] = "helloooo"
+
+# result = add_text_embeddings2(test_df, "title")
+result = u_can_dance_if_u_want_to(test_df, "title")
+result
+
+    # embedding_df_loaded = pd.DataFrame(
+    #     cached_embeddings,
+    #     index=cached_ids,
+    #     columns=[f"embedding_{i}" for i in range(cached_embeddings.shape[1])]
+    # )
+
+
+# %%
 # questions
 # keep id as column or use as index?
 # keep embeddings as one col or expand to 384?
@@ -480,28 +600,6 @@ def save_embeddings(
 
 
 # %%
-def load_ids_embeddings(file_path: Path = Path("test_embeddings.npz")) -> tuple[np.ndarray, np.ndarray]:
-    loaded_file = np.load(file_path)
-
-    return loaded_file['ids'], loaded_file['embeddings']
-
-
-# %%
-# loaded["ids"] -> array([ ... ])
-# loaded['embeddings'] -> array ([[ ... ]]), shape (10, 384)
-
-# %%
-id, x = load_ids_embeddings()
-type(id)
-
-# %%
-type(df.index.array)
-
-
-# %%
-# clean ;-;
-
-# %%
 def get_embeddings2(
     df: pd.DataFrame,
     text_col: str,
@@ -618,74 +716,21 @@ def u_can_dance_if_u_want_to(df: pd.DataFrame, text_col: str = "title"):
 
     return df_result
 
-test_df: pd.DataFrame = pd.read_pickle("test_df")
-test_df = test_df.set_index("id")
-test_df.loc[16] = "helloo"
-test_df.loc[192] = "helloooo"
+# test_df: pd.DataFrame = pd.read_pickle("test_df")
+# test_df = test_df.set_index("id")
+# test_df.loc[16] = "helloo"
+# test_df.loc[192] = "helloooo"
 
-# result = add_text_embeddings2(test_df, "title")
-result = u_can_dance_if_u_want_to(test_df, "title")
-result
-
-    # embedding_df_loaded = pd.DataFrame(
-    #     cached_embeddings,
-    #     index=cached_ids,
-    #     columns=[f"embedding_{i}" for i in range(cached_embeddings.shape[1])]
-    # )
-
-
-# %%
-# u can dance if u want to
-def u_can_dance_if_u_want_to(df: pd.DataFrame, text_col: str = "title"):
-    ids_loaded, embeddings_loaded = load_ids_embeddings()
-
-    # all ids in input df and embeddings -> to load
-    intersecting_ids = df.index.intersection(ids_loaded.tolist())
-    # all ids - intersecting ids -> to generate
-    ids_to_generate = df.index.difference(intersecting_ids)
-
-    # generate new embeddings
-    text_to_generate = df.loc[ids_to_generate][text_col].to_list()
-    new_embeddings = model.encode(
-        text_to_generate,
-        convert_to_numpy=True
-    )
-
-    # get a dict a dic with all needed embeddings
-    # format id: embedding
-    intersecting_ids_dict = {
-        id: emb for id, emb in zip(ids_loaded, embeddings_loaded) if id in intersecting_ids
-    }
-    new_embeddings_dict = dict(zip(ids_to_generate, new_embeddings))
-    embeddings_dict = intersecting_ids_dict | new_embeddings_dict
-
-    # create df from dic
-    embedding_dim = next(iter(embeddings_dict.values()), np.array([])).shape[0]
-    embeddings_df = pd.DataFrame.from_dict(
-        embeddings_dict,
-        orient="index",
-        columns=[f'{text_col}_{i}' for i in range(embedding_dim)]
-    )
-
-    # merge by index with input df
-    df_result = df.combine_first(embeddings_df)
-
-    return df_result
-
-test_df: pd.DataFrame = pd.read_pickle("test_df")
-test_df = test_df.set_index("id")
-test_df.loc[16] = "helloo"
-test_df.loc[192] = "helloooo"
-
-# result = add_text_embeddings2(test_df, "title")
-result = u_can_dance_if_u_want_to(test_df, "title")
-result
+# # result = add_text_embeddings2(test_df, "title")
+# result = u_can_dance_if_u_want_to(test_df, "title")
+# result
 
     # embedding_df_loaded = pd.DataFrame(
     #     cached_embeddings,
     #     index=cached_ids,
     #     columns=[f"embedding_{i}" for i in range(cached_embeddings.shape[1])]
     # )
+
 
 # %%
 dic1 = {1: 1}
