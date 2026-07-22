@@ -577,7 +577,8 @@ def this_time_surely(
 
 
 # %%
-# u can dance if u want to
+# FUNCTIONAL BTW
+# well for the most part
 def u_can_dance_if_u_want_to(df: pd.DataFrame, text_col: str = "title"):
     ids_loaded, embeddings_loaded = load_ids_embeddings()
 
@@ -632,8 +633,68 @@ result
     #     columns=[f"embedding_{i}" for i in range(cached_embeddings.shape[1])]
     # )
 
+
 # %%
-next(iter(result.values())).shape[0]
+# u can dance if u want to
+def u_can_dance_if_u_want_to(df: pd.DataFrame, text_col: str = "title"):
+    ids_loaded, embeddings_loaded = load_ids_embeddings()
+
+    # all ids in input df and embeddings -> to load
+    intersecting_ids = df.index.intersection(ids_loaded.tolist())
+    # all ids - intersecting ids -> to generate
+    ids_to_generate = df.index.difference(intersecting_ids)
+
+    # generate new embeddings
+    text_to_generate = df.loc[ids_to_generate][text_col].to_list()
+    new_embeddings = model.encode(
+        text_to_generate,
+        convert_to_numpy=True
+    )
+
+    # get a dict a dic with all needed embeddings
+    # format id: embedding
+    intersecting_ids_dict = {
+        id: emb for id, emb in zip(ids_loaded, embeddings_loaded) if id in intersecting_ids
+    }
+    new_embeddings_dict = dict(zip(ids_to_generate, new_embeddings))
+    embeddings_dict = intersecting_ids_dict | new_embeddings_dict
+
+    # create df from dic
+    embedding_dim = next(iter(embeddings_dict.values()), np.array([])).shape[0]
+    embeddings_df = pd.DataFrame.from_dict(
+        embeddings_dict,
+        orient="index",
+        columns=[f'{text_col}_{i}' for i in range(embedding_dim)]
+    )
+
+    # merge by index with input df
+    df_result = df.combine_first(embeddings_df)
+
+    return df_result
+
+test_df: pd.DataFrame = pd.read_pickle("test_df")
+test_df = test_df.set_index("id")
+test_df.loc[16] = "helloo"
+test_df.loc[192] = "helloooo"
+
+# result = add_text_embeddings2(test_df, "title")
+result = u_can_dance_if_u_want_to(test_df, "title")
+result
+
+    # embedding_df_loaded = pd.DataFrame(
+    #     cached_embeddings,
+    #     index=cached_ids,
+    #     columns=[f"embedding_{i}" for i in range(cached_embeddings.shape[1])]
+    # )
+
+# %%
+dic1 = {1: 1}
+dic2 = {2: 2}
+# dic1.update(dic2)
+dic1 | dic2
+
+# %%
+dic1
 
 # %%
 np.array([]).shape[0]
