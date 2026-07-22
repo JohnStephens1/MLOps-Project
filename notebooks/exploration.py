@@ -128,40 +128,130 @@ def add_time_features(df: pd.DataFrame, time_col: str = "created_on") -> pd.Data
 
 
 # %%
-def get_embeddings(
+def save_embeddings(
+    ids: np.typing.ArrayLike,
+    embeddings: np.typing.ArrayLike,
+    file_path: Path,
+    model: str = "all-MiniLM-L6-v2"
+):
+    np.savez(
+        file_path,
+        ids=ids,
+        embeddings=embeddings,
+        model=model
+    )
+
+
+# %%
+def load_ids_embeddings(file_path: Path) -> tuple[np.ndarray, np.ndarray]:
+    if not os.path.exists(file_path):
+        return np.array([]), np.array([])
+    
+    loaded_file = np.load(file_path)
+    
+    return loaded_file['ids'], loaded_file['embeddings']
+
+
+# %%
+def get_intersecting_complementing_ids(
     df: pd.DataFrame,
+    ids_loaded: np.ndarray
+) -> tuple[pd.Index, pd.Index]:
+    # all ids in input df and embeddings -> to load
+    intersecting_ids = df.index.intersection(ids_loaded.tolist())
+    
+    # all ids - intersecting ids -> to generate
+    ids_to_generate = df.index.difference(intersecting_ids)
+
+    return intersecting_ids, ids_to_generate
+
+
+# %%
+def get_new_embeddings(
+    df: pd.DataFrame,
+    ids_to_generate: pd.Index,
     text_col: str,
     model_str: str = "all-MiniLM-L6-v2",
-    text_embeddings_path: Path = Path("../data/embeddings/text_embeddings.npy"),
-    regenerate: bool = False
 ) -> np.ndarray:
-    if os.path.exists(text_embeddings_path) and not regenerate:
-        embeddings = np.load(text_embeddings_path)
-    else:
-        model = SentenceTransformer(model_str)
-
-        embeddings = model.encode(df[text_col].tolist(), convert_to_numpy=True)
-        
-        np.save(text_embeddings_path, embeddings)
+    model = SentenceTransformer(model_str)
     
-    return embeddings
+    text_to_generate = df.loc[ids_to_generate][text_col].to_list()
+
+    new_embeddings = model.encode(
+        text_to_generate,
+        convert_to_numpy=True
+    )
+
+    return new_embeddings
+
+
+# %%
+def get_embeddings_dic(
+    ids_loaded: np.ndarray,
+    embeddings_loaded: np.ndarray,
+    intersecting_ids: pd.Index,
+    ids_to_generate: pd.Index,
+    new_embeddings: np.ndarray
+) -> dict[pd.Index, np.ndarray]:
+    intersecting_ids_dic = {
+        id: emb for id, emb in zip(ids_loaded, embeddings_loaded) if id in intersecting_ids
+    }
+    new_embeddings_dic = dict(zip(ids_to_generate, new_embeddings))
+    embeddings_dic = intersecting_ids_dic | new_embeddings_dic
+
+    return embeddings_dic
+
+
+# %%
+def get_embeddings_df(
+    embeddings_dic: dict[pd.Index, np.ndarray],
+    text_col: str
+) -> pd.DataFrame:
+    embedding_dim = next(iter(embeddings_dic.values()), np.array([])).shape[0]
+    embeddings_df = pd.DataFrame.from_dict(
+        embeddings_dic,
+        orient="index",
+        columns=[f'{text_col}_{i}' for i in range(embedding_dim)]
+    )
+
+    return embeddings_df
 
 
 # %%
 def add_text_embeddings(
     df: pd.DataFrame,
-    text_col: str
+    text_col: str = "title",
+    file_path: Path = Path("../data/embeddings/text_embeddings.npz"),
 ) -> pd.DataFrame:
-    embeddings = get_embeddings(df, text_col)
+    ids_loaded, embeddings_loaded = load_ids_embeddings(file_path)
+    intersecting_ids, ids_to_generate = get_intersecting_complementing_ids(df, ids_loaded)
+
+    new_embeddings = np.array([]) if ids_to_generate.empty else get_new_embeddings(df, ids_to_generate, text_col)
     
-    vector_df = pd.DataFrame(
-        embeddings,
-        columns=[f"{text_col}_{i}" for i in range(embeddings.shape[1])]
+    embeddings_dic = get_embeddings_dic(
+        ids_loaded,
+        embeddings_loaded,
+        intersecting_ids,
+        ids_to_generate,
+        new_embeddings
     )
 
-    df = pd.concat([df, vector_df], axis=1)
+    if not ids_to_generate.empty:
+        save_embeddings(
+            list(embeddings_dic.keys()),
+            list(embeddings_dic.values()),
+            file_path
+        )
 
-    return df
+    embeddings_df = get_embeddings_df(
+        embeddings_dic,
+        text_col
+    )
+
+    # merge by index with input df
+    df_result = df.combine_first(embeddings_df)
+
+    return df_result
 
 
 # %%
@@ -178,6 +268,7 @@ def data_pipeline(
     df: pd.DataFrame = get_raw_dataset(),
     time_col: str = "created_on"
 ) -> pd.DataFrame:
+    df = df.set_index("id")
     df = preprocess_data(df)
     df = add_features(df, time_col)
 
@@ -254,7 +345,7 @@ def get_model_data(
 ) -> tuple[MinMaxScaler, LabelEncoder, pd.DataFrame, pd.DataFrame, np.typing.ArrayLike, np.typing.ArrayLike]:
     df = data_pipeline(df, time_col)
     
-    df = df.drop(['id', time_col, "title", "description", "text"], axis=1)
+    df = df.drop([time_col, "title", "description", "text"], axis=1)
     
     X_train, X_test, y_train, y_test = get_train_test_df(df, target_col)
     scaler, X_train, X_test = get_scaled_target(X_train, X_test)
@@ -267,153 +358,16 @@ def get_model_data(
 # #### running 
 
 # %%
-# ALL FNs FOR THE FOLLOWING BEAUTY
+df = data_pipeline()
+df.head()
 
 # %%
-# save and load fun
-def save_embeddings(
-    ids: np.typing.ArrayLike,
-    embeddings: np.typing.ArrayLike,
-    file_path: Path,
-    model: str = "all-MiniLM-L6-v2"
-):
-    np.savez(
-        file_path,
-        ids=ids,
-        embeddings=embeddings,
-        model=model
-    )
+scaler, encoder, X_train, X_test, y_train, y_test = get_model_data()
+X_train.head()
 
 
 # %%
-def load_ids_embeddings(file_path: Path) -> tuple[np.ndarray, np.ndarray]:
-    if not os.path.exists(file_path):
-        return np.array([]), np.array([])
-    
-    loaded_file = np.load(file_path)
-    
-    return loaded_file['ids'], loaded_file['embeddings']
-
-
-# %%
-def get_intersecting_complementing_ids(
-    df: pd.DataFrame,
-    ids_loaded: np.ndarray
-) -> tuple[pd.Index, pd.Index]:
-    # all ids in input df and embeddings -> to load
-    intersecting_ids = df.index.intersection(ids_loaded.tolist())
-    # all ids - intersecting ids -> to generate
-    ids_to_generate = df.index.difference(intersecting_ids)
-
-    return intersecting_ids, ids_to_generate
-
-
-# %%
-def get_new_embeddings(
-    df: pd.DataFrame,
-    ids_to_generate: pd.Index,
-    text_col: str,
-    model_str: str = "all-MiniLM-L6-v2",
-) -> np.ndarray:
-    model = SentenceTransformer(model_str)
-    
-    text_to_generate = df.loc[ids_to_generate][text_col].to_list()
-
-    new_embeddings = model.encode(
-        text_to_generate,
-        convert_to_numpy=True
-    )
-
-    return new_embeddings
-
-
-# %%
-def get_embeddings_dic(
-        ids_loaded: np.ndarray,
-        embeddings_loaded: np.ndarray,
-        intersecting_ids: pd.Index,
-        ids_to_generate: pd.Index,
-        new_embeddings: np.ndarray
-) -> dict[pd.Index, np.ndarray]:
-    intersecting_ids_dic = {
-        id: emb for id, emb in zip(ids_loaded, embeddings_loaded) if id in intersecting_ids
-    }
-    new_embeddings_dic = dict(zip(ids_to_generate, new_embeddings))
-    embeddings_dic = intersecting_ids_dic | new_embeddings_dic
-
-    return embeddings_dic
-
-
-
-# %%
-def get_embeddings_df(
-    embeddings_dic: dict[pd.Index, np.ndarray],
-    text_col: str
-) -> pd.DataFrame:
-    embedding_dim = next(iter(embeddings_dic.values()), np.array([])).shape[0]
-    embeddings_df = pd.DataFrame.from_dict(
-        embeddings_dic,
-        orient="index",
-        columns=[f'{text_col}_{i}' for i in range(embedding_dim)]
-    )
-
-    return embeddings_df
-    
-
-
-# %%
-# u can dance if u want to
-def u_can_dance_if_u_want_to(
-        df: pd.DataFrame,
-        text_col: str = "title",
-        file_path: Path = Path("test_embeddings2.npz")
-    ) -> pd.DataFrame:
-    ids_loaded, embeddings_loaded = load_ids_embeddings(file_path)
-    intersecting_ids, ids_to_generate = get_intersecting_complementing_ids(df, ids_loaded)
-
-    new_embeddings = np.array([]) if ids_to_generate.empty else get_new_embeddings(df, ids_to_generate, text_col)
-    
-    embeddings_dic = get_embeddings_dic(
-        ids_loaded,
-        embeddings_loaded,
-        intersecting_ids,
-        ids_to_generate,
-        new_embeddings
-    )
-
-    if not ids_to_generate.empty:
-        save_embeddings(
-            list(embeddings_dic.keys()),
-            list(embeddings_dic.values()),
-            file_path
-        )
-
-    embeddings_df = get_embeddings_df(
-        embeddings_dic,
-        text_col
-    )
-
-    # merge by index with input df
-    df_result = df.combine_first(embeddings_df)
-
-    return df_result
-
-
-test_df: pd.DataFrame = pd.read_pickle("test_df")
-test_df = test_df.set_index("id")
-# test_df.loc[16] = "helloo"
-test_df.loc[192] = "helloooo"
-
-# result = add_text_embeddings2(test_df, "title")
-result = u_can_dance_if_u_want_to(test_df, "title")
-result
-
-    # embedding_df_loaded = pd.DataFrame(
-    #     cached_embeddings,
-    #     index=cached_ids,
-    #     columns=[f"embedding_{i}" for i in range(cached_embeddings.shape[1])]
-    # )
-
+# testing
 
 # %%
 def get_test_df():
@@ -476,16 +430,20 @@ def lets_keep_u_for_now(
 
 
 # %%
+def test_add_text_embeddings(file_path: Path = Path("test_embeddings.npz")):
+    test_df: pd.DataFrame = pd.read_pickle("test_df")
+    test_df = test_df.set_index("id")
+    # test_df.loc[16] = "helloo"
+    test_df.loc[192] = "helloooo"
+
+    # result = add_text_embeddings2(test_df, "title")
+    result = add_text_embeddings(test_df, "title", file_path)
+
+    return result
+
+
+# %%
 # end testing
-
-# %%
-df = data_pipeline()
-df.head()
-
-# %%
-scaler, encoder, X_train, X_test, y_train, y_test = get_model_data()
-X_train.head()
-
 
 # %% [markdown]
 # #### exploration
