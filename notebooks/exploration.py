@@ -270,9 +270,28 @@ def get_model_data(
 # ALL FNs FOR THE FOLLOWING BEAUTY
 
 # %%
-def load_ids_embeddings(file_path: Path = Path("test_embeddings.npz")) -> tuple[np.ndarray, np.ndarray]:
-    loaded_file = np.load(file_path)
+# save and load fun
+def save_embeddings(
+    ids: np.typing.ArrayLike,
+    embeddings: np.typing.ArrayLike,
+    file_path: Path,
+    model: str = "all-MiniLM-L6-v2"
+):
+    np.savez(
+        file_path,
+        ids=ids,
+        embeddings=embeddings,
+        model=model
+    )
 
+
+# %%
+def load_ids_embeddings(file_path: Path) -> tuple[np.ndarray, np.ndarray]:
+    if not os.path.exists(file_path):
+        return np.array([]), np.array([])
+    
+    loaded_file = np.load(file_path)
+    
     return loaded_file['ids'], loaded_file['embeddings']
 
 
@@ -316,7 +335,6 @@ def get_embeddings_dic(
         ids_to_generate: pd.Index,
         new_embeddings: np.ndarray
 ) -> dict[pd.Index, np.ndarray]:
-    # format id: embedding
     intersecting_ids_dic = {
         id: emb for id, emb in zip(ids_loaded, embeddings_loaded) if id in intersecting_ids
     }
@@ -345,8 +363,12 @@ def get_embeddings_df(
 
 # %%
 # u can dance if u want to
-def u_can_dance_if_u_want_to(df: pd.DataFrame, text_col: str = "title"):
-    ids_loaded, embeddings_loaded = load_ids_embeddings()
+def u_can_dance_if_u_want_to(
+        df: pd.DataFrame,
+        text_col: str = "title",
+        file_path: Path = Path("test_embeddings2.npz")
+    ) -> pd.DataFrame:
+    ids_loaded, embeddings_loaded = load_ids_embeddings(file_path)
     intersecting_ids, ids_to_generate = get_intersecting_complementing_ids(df, ids_loaded)
 
     new_embeddings = np.array([]) if ids_to_generate.empty else get_new_embeddings(df, ids_to_generate, text_col)
@@ -358,6 +380,13 @@ def u_can_dance_if_u_want_to(df: pd.DataFrame, text_col: str = "title"):
         ids_to_generate,
         new_embeddings
     )
+
+    if not ids_to_generate.empty:
+        save_embeddings(
+            list(embeddings_dic.keys()),
+            list(embeddings_dic.values()),
+            file_path
+        )
 
     embeddings_df = get_embeddings_df(
         embeddings_dic,
@@ -373,7 +402,7 @@ def u_can_dance_if_u_want_to(df: pd.DataFrame, text_col: str = "title"):
 test_df: pd.DataFrame = pd.read_pickle("test_df")
 test_df = test_df.set_index("id")
 # test_df.loc[16] = "helloo"
-# test_df.loc[192] = "helloooo"
+test_df.loc[192] = "helloooo"
 
 # result = add_text_embeddings2(test_df, "title")
 result = u_can_dance_if_u_want_to(test_df, "title")
