@@ -1,5 +1,5 @@
 {
-    "name": "MLOps-Project",
+    "name": "TextOps",
     "dockerComposeFile": "../compose.yaml",
     "service": "dev",
     "runServices": ["dev"],
