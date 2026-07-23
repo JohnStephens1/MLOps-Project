@@ -101,6 +101,15 @@ def get_encoded_target(
     return encoder, y_train, y_test
 
 
+# class PreparedData(TypedDict):
+#     scaler: MinMaxScaler
+#     encoder: LabelEncoder
+#     X_train: pd.DataFrame
+#     X_test: pd.DataFrame
+#     y_train: np.typing.ArrayLike
+#     y_test: np.typing.ArrayLike
+
+
 def get_model_data(
     df: pd.DataFrame = get_raw_dataset(),
     time_col: str = "created_on",
@@ -125,3 +134,11 @@ def get_model_data(
     encoder, y_train, y_test = get_encoded_target(y_train, y_test)
     
     return scaler, encoder, X_train, X_test, y_train, y_test
+    # return {
+    #     "scaler": scaler,
+    #     "encoder": encoder,
+    #     "X_train": X_train,
+    #     "X_test": X_test,
+    #     "y_train": y_train,
+    #     "y_test": y_test,
+    # }
