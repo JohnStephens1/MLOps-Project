@@ -53,7 +53,7 @@ def add_time_features(df: pd.DataFrame, time_col: str = "created_on") -> pd.Data
 
 
 def add_features(
-    df: pd.DataFrame, time_col: str, text_col: str = "text"
+    df: pd.DataFrame, time_col: str = "created_on", text_col: str = "text"
 ) -> pd.DataFrame:
     """adds features to the dataset, specifically a text column, time series features and text embeddings
 
