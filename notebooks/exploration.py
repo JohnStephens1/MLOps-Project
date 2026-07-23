@@ -8,7 +8,7 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.19.4
 #   kernelspec:
-#     display_name: 'defaultInterpreterPath: 3.12.12.final.0'
+#     display_name: mlops-project (3.12.12)
 #     language: python
 #     name: python3
 # ---
