@@ -69,6 +69,9 @@ scaler, encoder, X_train, X_test, y_train, y_test = get_model_data()
 X_train.head()
 
 # %%
+encoder.
+
+# %%
 # modeling
 
 # %%
@@ -76,7 +79,28 @@ from sklearn.metrics import accuracy_score, classification_report, confusion_mat
 from xgboost import XGBClassifier
 
 # %%
-model = XGBClassifier(
+# could use dataclass for model params instead
+
+# from dataclasses import dataclass, asdict
+
+# @dataclass
+# class ModelParams:
+#     objective: str = "multi:softprob"
+#     num_class: int = 4
+#     n_estimators: int = 300
+#     max_depth: int = 6
+#     learning_rate: float = 0.05
+#     subsample: float = 0.8
+#     colsample_bytree: float = 0.8
+#     eval_metric: str = "mlogloss"
+#     random_state: int = 42
+
+# model_params = ModelParams()
+
+# model = XGBClassifier(**asdict(model_params))
+
+# %%
+model_params = dict(
     objective="multi:softprob",   # multiclass classification
     num_class=4,
     n_estimators=300,
@@ -87,6 +111,28 @@ model = XGBClassifier(
     eval_metric="mlogloss",
     random_state=42
 )
+
+# %%
+from typing import Any, Mapping
+
+def get_model(model_params: Mapping[str, Any]):
+    model = XGBClassifier(**model_params)
+
+    return model
+
+model_params = dict(
+    objective="multi:softprob",   # multiclass classification
+    num_class=4,
+    n_estimators=300,
+    max_depth=6,
+    learning_rate=0.05,
+    subsample=0.8,
+    colsample_bytree=0.8,
+    eval_metric="mlogloss",
+    random_state=42
+)
+
+model = get_model(model_params)
 
 
 # %%
