@@ -5,6 +5,17 @@ from text_classifier.data.embeddings import add_text_embeddings
 
 
 def set_sin_cos_features(df: pd.DataFrame, result_col_name: str, input_col: pd.Series, time_span: int) -> pd.DataFrame:
+    """adds cos and sin time series features to the df
+
+    Args:
+        df (pd.DataFrame): target df
+        result_col_name (str): the name of the new feature column
+        input_col (pd.Series): the input column to calculate for
+        time_span (int): the length of the time series
+
+    Returns:
+        pd.DataFrame: the modified df with added time series features
+    """
     df[result_col_name + "_sin"] = np.sin(2 * np.pi * input_col / time_span)
     df[result_col_name + "_cos"] = np.cos(2 * np.pi * input_col / time_span)
 
@@ -12,6 +23,15 @@ def set_sin_cos_features(df: pd.DataFrame, result_col_name: str, input_col: pd.S
 
 
 def add_time_features(df: pd.DataFrame, time_col: str = "created_on") -> pd.DataFrame:
+    """adds time series features to the df
+
+    Args:
+        df (pd.DataFrame): input df
+        time_col (str, optional): column containing time data. Defaults to "created_on".
+
+    Returns:
+        pd.DataFrame: the modified df with added time series features 
+    """
     # hour / 24 - cyclic
     df = set_sin_cos_features(df, "hour_of_day", df[time_col].dt.hour, 24)
 
@@ -31,6 +51,16 @@ def add_time_features(df: pd.DataFrame, time_col: str = "created_on") -> pd.Data
 
 
 def add_features(df: pd.DataFrame, time_col: str, text_col: str = "text") -> pd.DataFrame:
+    """adds features to the dataset, specifically a text column, time series features and text embeddings
+
+    Args:
+        df (pd.DataFrame): input df
+        time_col (str): name of the column containing time data
+        text_col (str, optional): name of the created text column. Defaults to "text".
+
+    Returns:
+        pd.DataFrame: modified df with added features
+    """
     df[text_col] = df.title + " " + df.description
     df = add_time_features(df, time_col)
     df = add_text_embeddings(df, text_col)
