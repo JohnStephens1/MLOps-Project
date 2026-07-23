@@ -69,9 +69,6 @@ scaler, encoder, X_train, X_test, y_train, y_test = get_model_data()
 X_train.head()
 
 # %%
-encoder.
-
-# %%
 # modeling
 
 # %%
