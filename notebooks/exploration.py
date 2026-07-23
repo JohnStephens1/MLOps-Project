@@ -8,7 +8,7 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.19.4
 #   kernelspec:
-#     display_name: mlops-project (3.12.12)
+#     display_name: 'defaultInterpreterPath: 3.12.12.final.0'
 #     language: python
 #     name: python3
 # ---
@@ -26,6 +26,11 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler
 from pathlib import Path
 
+
+# %%
+# automatically reloads imported packages when changes are made to them
+# %load_ext autoreload
+# %autoreload 2
 
 # %% [markdown]
 # #### ideas / todos
@@ -352,6 +357,14 @@ def get_model_data(
 
 # %% [markdown]
 # #### running 
+
+# %%
+# TEMP IMPORT TEST
+from text_classifier.data.data import hello_from_data
+
+# %%
+# hello_from_data_py()
+hello_from_data("potato")
 
 # %%
 df = data_pipeline()

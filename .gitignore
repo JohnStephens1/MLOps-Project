@@ -13,7 +13,7 @@ dist/
 *.ipynb
 
 datasets/
-data/
+/data/
 
 test_df
 test_embeddings.npz

@@ -21,3 +21,9 @@ def get_train_test_df(
     )
     
     return (train_df, test_df)
+
+def hello_from_data(a_string_pls: str) -> str:
+    print("helloo i was in dataa")
+    print(f"also your string: {a_string_pls}")
+
+    return "we done did it"

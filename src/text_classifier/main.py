@@ -1,4 +1,4 @@
-from data.data import get_dataset, get_train_test_df
+from text_classifier.data.data import get_dataset, get_train_test_df
 
 
 def main():
