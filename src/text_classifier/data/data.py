@@ -1,29 +1,38 @@
+import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
+import text_classifier.data.model
+
+from pathlib import Path
+from sklearn.preprocessing import LabelEncoder, MinMaxScaler
+from text_classifier.data.features import add_features
+from text_classifier.data.preprocessing import preprocess_data
+from text_classifier.config import DATASET_PATH
 
 
-def get_dataset(dataset_path: str = "datasets/dataset.csv") -> pd.DataFrame :
-    return pd.read_csv(dataset_path)
+def get_raw_dataset(ds_path: Path = DATASET_PATH) -> pd.DataFrame:
+    return pd.read_csv(ds_path)
 
-def get_train_test_df(
-        df: pd.DataFrame,
-        test_size: float = 0.2,
-        seed: int = 1234
-) -> tuple[pd.DataFrame, pd.DataFrame]:
-    train_df: pd.DataFrame
-    test_df: pd.DataFrame
 
-    train_df, test_df = train_test_split(
+def data_pipeline(
+    df: pd.DataFrame = get_raw_dataset(),
+    time_col: str = "created_on"
+) -> pd.DataFrame:
+    df = df.set_index("id")
+    df = preprocess_data(df)
+    df = add_features(df, time_col)
+
+    return df
+
+
+def get_model_data(
+    df: pd.DataFrame = get_raw_dataset(),
+    time_col: str = "created_on",
+    target_col: str = "tag"
+) -> tuple[
+    MinMaxScaler, LabelEncoder, pd.DataFrame, pd.DataFrame, np.typing.ArrayLike, np.typing.ArrayLike
+]:
+    return text_classifier.data.model.get_model_data(
         df,
-        stratify=df.tag,
-        test_size=test_size,
-        random_state=seed
+        time_col,
+        target_col
     )
-    
-    return (train_df, test_df)
-
-def hello_from_data(a_string_pls: str) -> str:
-    print("helloo i was in dataa")
-    print(f"also your string: {a_string_pls}")
-
-    return "we done did it"
