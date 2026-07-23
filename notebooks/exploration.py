@@ -20,8 +20,12 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+
 from sentence_transformers import SentenceTransformer
 from pathlib import Path
+
+from text_classifier.data.data import data_pipeline
+from text_classifier.data.model import get_model_data
 
 # %%
 # automatically reloads imported packages when changes are made to them
@@ -55,10 +59,6 @@ from pathlib import Path
 
 # %% [markdown]
 # #### running 
-
-# %%
-from text_classifier.data.data import data_pipeline
-from text_classifier.data.data import get_model_data
 
 # %%
 df = data_pipeline()
