@@ -1,8 +1,8 @@
 {
     "name": "MLOps-Project",
     "dockerComposeFile": "../compose.yaml",
-    "service": "notebook",
-    "runServices": ["notebook"],
+    "service": "dev",
+    "runServices": ["dev"],
     "workspaceFolder": "/app",
 
     "overrideCommand": true,
