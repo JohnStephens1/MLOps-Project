@@ -89,7 +89,7 @@ def get_new_embeddings(
     return new_embeddings
 
 
-def get_embeddings_dic(
+def get_embeddings_dict(
     ids_loaded: np.ndarray,
     embeddings_loaded: np.ndarray,
     intersecting_ids: pd.Index,
@@ -106,34 +106,34 @@ def get_embeddings_dic(
         new_embeddings (np.ndarray): newly generated embeddings
 
     Returns:
-        dict[pd.Index, np.ndarray]: embeddings_dic. contains all ids and embeddings for df
+        dict[pd.Index, np.ndarray]: embeddings_dict. contains all ids and embeddings for df
     """
-    intersecting_ids_dic = {
+    intersecting_ids_dict = {
         id: emb
         for id, emb in zip(ids_loaded, embeddings_loaded)
         if id in intersecting_ids
     }
-    new_embeddings_dic = dict(zip(ids_to_generate, new_embeddings))
-    embeddings_dic = intersecting_ids_dic | new_embeddings_dic
+    new_embeddings_dict = dict(zip(ids_to_generate, new_embeddings))
+    embeddings_dict = intersecting_ids_dict | new_embeddings_dict
 
-    return embeddings_dic
+    return embeddings_dict
 
 
 def get_embeddings_df(
-    embeddings_dic: dict[pd.Index, np.ndarray], text_col: str
+    embeddings_dict: dict[pd.Index, np.ndarray], text_col: str
 ) -> pd.DataFrame:
     """creates a df based on the input dic
 
     Args:
-        embeddings_dic (dict[pd.Index, np.ndarray]): dic containing ids mapped to the corresponding embeddings
+        embeddings_dict (dict[pd.Index, np.ndarray]): dict containing ids mapped to the corresponding embeddings
         text_col (str): name of the text column
 
     Returns:
-        pd.DataFrame: embeddings_df. the dataframe built from the input dic
+        pd.DataFrame: embeddings_df. the dataframe built from the input dict
     """
-    embedding_dim = next(iter(embeddings_dic.values()), np.array([])).shape[0]
+    embedding_dim = next(iter(embeddings_dict.values()), np.array([])).shape[0]
     embeddings_df = pd.DataFrame.from_dict(
-        embeddings_dic,
+        embeddings_dict,
         orient="index",
         columns=[f"{text_col}_{i}" for i in range(embedding_dim)],
     )
@@ -167,16 +167,17 @@ def add_text_embeddings(
         else get_new_embeddings(df, ids_to_generate, text_col)
     )
 
-    embeddings_dic = get_embeddings_dic(
+    embeddings_dict = get_embeddings_dict(
         ids_loaded, embeddings_loaded, intersecting_ids, ids_to_generate, new_embeddings
     )
 
+    # TODO: add to existing embeddings instead of replacing everything
     if not ids_to_generate.empty:
         save_embeddings(
-            list(embeddings_dic.keys()), list(embeddings_dic.values()), file_path
+            list(embeddings_dict.keys()), list(embeddings_dict.values()), file_path
         )
 
-    embeddings_df = get_embeddings_df(embeddings_dic, text_col)
+    embeddings_df = get_embeddings_df(embeddings_dict, text_col)
 
     # merge by index with input df
     df_result = df.combine_first(embeddings_df)
