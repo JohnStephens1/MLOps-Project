@@ -7,7 +7,7 @@ services:
     working_dir: /app
     volumes:
       - .:/app
-    command: uv run python src/main.py
+    command: uv run python src/text_classifier/main.py
   notebook:
     profiles: ["notebook"]
     build:
