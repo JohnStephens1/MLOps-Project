@@ -16,9 +16,8 @@ def preprocess_string(string: str) -> str:
 
 
 def preprocess_text(
-        df: pd.DataFrame,
-        target_cols: list[str] = ["title", "description", "tag"]
-    ) -> pd.DataFrame:
+    df: pd.DataFrame, target_cols: list[str] = ["title", "description", "tag"]
+) -> pd.DataFrame:
     """Preprocesses text in target_cols
 
     Args:
@@ -38,7 +37,7 @@ def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
     df = df.dropna()
     df = df.drop_duplicates()
 
-    df['created_on'] = pd.to_datetime(df['created_on'])
+    df["created_on"] = pd.to_datetime(df["created_on"])
     df = preprocess_text(df)
 
     return df

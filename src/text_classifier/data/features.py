@@ -4,7 +4,9 @@ import pandas as pd
 from text_classifier.data.embeddings import add_text_embeddings
 
 
-def set_sin_cos_features(df: pd.DataFrame, result_col_name: str, input_col: pd.Series, time_span: int) -> pd.DataFrame:
+def set_sin_cos_features(
+    df: pd.DataFrame, result_col_name: str, input_col: pd.Series, time_span: int
+) -> pd.DataFrame:
     """adds cos and sin time series features to the df
 
     Args:
@@ -30,7 +32,7 @@ def add_time_features(df: pd.DataFrame, time_col: str = "created_on") -> pd.Data
         time_col (str, optional): column containing time data. Defaults to "created_on".
 
     Returns:
-        pd.DataFrame: the modified df with added time series features 
+        pd.DataFrame: the modified df with added time series features
     """
     # hour / 24 - cyclic
     df = set_sin_cos_features(df, "hour_of_day", df[time_col].dt.hour, 24)
@@ -50,7 +52,9 @@ def add_time_features(df: pd.DataFrame, time_col: str = "created_on") -> pd.Data
     return df
 
 
-def add_features(df: pd.DataFrame, time_col: str, text_col: str = "text") -> pd.DataFrame:
+def add_features(
+    df: pd.DataFrame, time_col: str, text_col: str = "text"
+) -> pd.DataFrame:
     """adds features to the dataset, specifically a text column, time series features and text embeddings
 
     Args:

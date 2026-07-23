@@ -19,8 +19,7 @@ def get_raw_dataset(ds_path: Path = DATASET_PATH) -> pd.DataFrame:
 
 
 def data_pipeline(
-    df: pd.DataFrame = get_raw_dataset(),
-    time_col: str = "created_on"
+    df: pd.DataFrame = get_raw_dataset(), time_col: str = "created_on"
 ) -> pd.DataFrame:
     """preprocesses the data and adds features to the dataset
 

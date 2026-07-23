@@ -7,8 +7,7 @@ from text_classifier.data.data import data_pipeline, get_raw_dataset
 
 
 def get_X_y(
-    df: pd.DataFrame,
-    target_col: str = "tag"
+    df: pd.DataFrame, target_col: str = "tag"
 ) -> tuple[pd.DataFrame, pd.Series]:
     """Splits target_col off of df, then returns the remaining dataset and the isolated column
 
@@ -21,15 +20,12 @@ def get_X_y(
     """
     X = df.drop(target_col, axis=1)
     y = df[target_col]
-    
+
     return X, y
 
 
 def get_train_test_df(
-    df: pd.DataFrame,
-    target_col: str = "tag",
-    test_size: float = 0.2,
-    seed: int = 1234
+    df: pd.DataFrame, target_col: str = "tag", test_size: float = 0.2, seed: int = 1234
 ) -> tuple[pd.DataFrame, pd.DataFrame, np.typing.ArrayLike, np.typing.ArrayLike]:
     """Gets train and test dataframes
 
@@ -45,11 +41,7 @@ def get_train_test_df(
     X, y = get_X_y(df, target_col)
 
     X_train, X_test, y_train, y_test = train_test_split(
-        X,
-        y,
-        stratify=y,
-        test_size=test_size,
-        random_state=seed
+        X, y, stratify=y, test_size=test_size, random_state=seed
     )
 
     return X_train, X_test, y_train, y_test
@@ -59,7 +51,7 @@ def get_scaled_target(
     X_train: pd.DataFrame,
     X_test: pd.DataFrame,
     range: tuple[int, int] = (0, 1),
-    target_col: str = "days_since_start"
+    target_col: str = "days_since_start",
 ) -> tuple[MinMaxScaler, pd.DataFrame, pd.DataFrame]:
     """scales the target_col in input dataframes via MinMaxScaling
 
@@ -81,8 +73,7 @@ def get_scaled_target(
 
 
 def get_encoded_target(
-    y_train: np.typing.ArrayLike,
-    y_test: np.typing.ArrayLike
+    y_train: np.typing.ArrayLike, y_test: np.typing.ArrayLike
 ) -> tuple[LabelEncoder, np.typing.ArrayLike, np.typing.ArrayLike]:
     """encodes y_train, y_test via LabelEncoder
 
@@ -97,7 +88,7 @@ def get_encoded_target(
 
     y_train = encoder.fit_transform(y_train)
     y_test = encoder.transform(y_test)
-    
+
     return encoder, y_train, y_test
 
 
@@ -113,8 +104,15 @@ def get_encoded_target(
 def get_model_data(
     df: pd.DataFrame = get_raw_dataset(),
     time_col: str = "created_on",
-    target_col: str = "tag"
-) -> tuple[MinMaxScaler, LabelEncoder, pd.DataFrame, pd.DataFrame, np.typing.ArrayLike, np.typing.ArrayLike]:
+    target_col: str = "tag",
+) -> tuple[
+    MinMaxScaler,
+    LabelEncoder,
+    pd.DataFrame,
+    pd.DataFrame,
+    np.typing.ArrayLike,
+    np.typing.ArrayLike,
+]:
     """gets the data for model training and eval, as well as the corresponding scaler and encoder
 
     Args:
@@ -126,13 +124,13 @@ def get_model_data(
         tuple[MinMaxScaler, LabelEncoder, pd.DataFrame, pd.DataFrame, np.typing.ArrayLike, np.typing.ArrayLike]: scaler, encoder, X_train, X_test, y_train, y_test
     """
     df = data_pipeline(df, time_col)
-    
+
     df = df.drop([time_col, "title", "description", "text"], axis=1)
-    
+
     X_train, X_test, y_train, y_test = get_train_test_df(df, target_col)
     scaler, X_train, X_test = get_scaled_target(X_train, X_test)
     encoder, y_train, y_test = get_encoded_target(y_train, y_test)
-    
+
     return scaler, encoder, X_train, X_test, y_train, y_test
     # return {
     #     "scaler": scaler,
