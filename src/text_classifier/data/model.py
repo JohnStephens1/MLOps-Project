@@ -6,10 +6,12 @@ from sklearn.preprocessing import LabelEncoder
 from text_classifier.data.data import data_pipeline, get_raw_dataset
 
 
-def get_pre_pipe_model_data() -> pd.DataFrame:
+def get_pre_pipe_model_data(
+    drop_cols: list[str] = ["created_on", "title", "description", "text"]
+) -> pd.DataFrame:
     df = get_raw_dataset()
     df = data_pipeline()
-    df = df.drop(["created_on", "title", "description", "text"], axis=1)
+    df = df.drop(drop_cols, axis=1)
 
     return df
 
