@@ -2,8 +2,7 @@ import numpy as np
 import pandas as pd
 
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder, MinMaxScaler
-from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import LabelEncoder
 from text_classifier.data.data import data_pipeline, get_raw_dataset
 
 
@@ -48,17 +47,6 @@ def get_train_test_df(
     )
 
     return X_train, X_test, y_train, y_test
-
-
-def get_preprocessor(
-    target_cols: list[str] = ["days_since_start"],
-) -> ColumnTransformer:
-    return ColumnTransformer(
-        [
-            ("scaler", MinMaxScaler(), target_cols),
-        ],
-        remainder="passthrough",
-    )
 
 
 def get_encoder_train_test_df() -> tuple[
