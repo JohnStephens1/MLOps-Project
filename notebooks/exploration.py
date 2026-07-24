@@ -69,6 +69,42 @@ scaler, encoder, X_train, X_test, y_train, y_test = get_model_data()
 X_train.head()
 
 # %%
+# data pipeline
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.pipeline import Pipeline
+from collections.abc import Callable
+from typing import Any
+
+
+# %%
+class FunctionTransformer(BaseEstimator, TransformerMixin):
+    def __init__(self, func: Callable[[Any], Any]):
+        self.func = func
+
+    def fit(self, X: pd.DataFrame, y: None = None):
+        return self
+
+    def transform(self, X: pd.DataFrame):
+        return self.func(X.copy())
+
+
+# %%
+def set_index(df: pd.DataFrame) -> pd.DataFrame:
+    return df.set_index("id")
+
+
+# %%
+from text_classifier.data.features import add_features
+from text_classifier.data.preprocessing import preprocess_data
+
+
+Pipeline([
+    ("set_index", FunctionTransformer(set_index)),
+    ("preprocess_data", FunctionTransformer(preprocess_data)),
+    ("add_features", FunctionTransformer(add_features)),
+])
+
+# %%
 # modeling
 
 # %%
