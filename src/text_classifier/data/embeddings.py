@@ -117,29 +117,29 @@ def get_and_save_generated_embeddings(
 
 
 def get_intersecting_embeddings(
-    ids_loaded: np.ndarray,
-    embeddings_loaded: np.ndarray,
+    ids: np.ndarray,
+    embeddings: np.ndarray,
     ids_intersecting: pd.Index,
     embedding_dim: int = EMBEDDING_DIM,
 ) -> np.ndarray:
     return np.array(
         [
             emb
-            for id, emb in zip(ids_loaded, embeddings_loaded)
+            for id, emb in zip(ids, embeddings)
             if id in ids_intersecting
         ]
     ).reshape(-1, embedding_dim)
 
 
 def get_embeddings_df(
-    ids_result: pd.Index,
-    embeddings_result: np.ndarray,
+    ids: pd.Index,
+    embeddings: np.ndarray,
     text_col: str,
     embedding_dim: int = EMBEDDING_DIM,
 ):
     return pd.DataFrame(
-        embeddings_result,
-        index=ids_result,
+        embeddings,
+        index=ids,
         columns=[f"{text_col}_{i}" for i in range(embedding_dim)],
     )
 
