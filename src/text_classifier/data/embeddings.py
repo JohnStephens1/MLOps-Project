@@ -10,7 +10,7 @@ from text_classifier.config import EMBEDDINGS_PATH, EMBEDDING_MODEL_STR
 def save_embeddings(
     ids: np.typing.ArrayLike,
     embeddings: np.typing.ArrayLike,
-    file_path: Path,
+    file_path: Path = EMBEDDINGS_PATH,
     model: str = EMBEDDING_MODEL_STR,
 ):
     """saves embeddings to file_path, including ids and model name
@@ -24,7 +24,7 @@ def save_embeddings(
     np.savez(file_path, ids=ids, embeddings=embeddings, model=model)
 
 
-def load_ids_embeddings(file_path: Path) -> tuple[np.ndarray, np.ndarray]:
+def load_ids_embeddings(file_path: Path = EMBEDDINGS_PATH) -> tuple[np.ndarray, np.ndarray]:
     """loads the ids and embeddings stored in file_path
 
     Args:
@@ -89,56 +89,101 @@ def get_new_embeddings(
     return new_embeddings
 
 
-def get_embeddings_dict(
+# def get_embeddings_dict(
+#     ids_loaded: np.ndarray,
+#     embeddings_loaded: np.ndarray,
+#     intersecting_ids: pd.Index,
+#     ids_to_generate: pd.Index,
+#     new_embeddings: np.ndarray,
+# ) -> dict[pd.Index, np.ndarray]:
+#     """gets a dictionary with ids mapping to the new and loaded embeddings for df
+
+#     Args:
+#         ids_loaded (np.ndarray): loaded ids
+#         embeddings_loaded (np.ndarray): loaded embeddings
+#         intersecting_ids (pd.Index): intersecting ids
+#         ids_to_generate (pd.Index): ids that require new generation
+#         new_embeddings (np.ndarray): newly generated embeddings
+
+#     Returns:
+#         dict[pd.Index, np.ndarray]: embeddings_dict. contains all ids and embeddings for df
+#     """
+#     loaded_embeddings_dict = dict(zip(ids_loaded, embeddings_loaded))
+
+#     x = {
+#         id: emb for id, emb in loaded_embeddings_dict.items() if id in intersecting_ids
+#     }
+
+#     new_embeddings_dict = dict(zip(ids_to_generate, new_embeddings))
+
+#     embeddings_dict = x | new_embeddings_dict
+
+#     return embeddings_dict
+
+
+# def get_embeddings_df(
+#     embeddings_dict: dict[pd.Index, np.ndarray], text_col: str
+# ) -> pd.DataFrame:
+#     """creates a df based on the input dic
+
+#     Args:
+#         embeddings_dict (dict[pd.Index, np.ndarray]): dict containing ids mapped to the corresponding embeddings
+#         text_col (str): name of the text column
+
+#     Returns:
+#         pd.DataFrame: embeddings_df. the dataframe built from the input dict
+#     """
+#     embedding_dim = next(iter(embeddings_dict.values()), np.array([])).shape[0]
+#     embeddings_df = pd.DataFrame.from_dict(
+#         embeddings_dict,
+#         orient="index",
+#         columns=[f"{text_col}_{i}" for i in range(embedding_dim)],
+#     )
+
+#     return embeddings_df
+
+
+def get_and_save_generated_embeddings(
+    df: pd.DataFrame,
+    ids_loaded: np.ndarray,
+    ids_to_generate: pd.Index,
+    embeddings_loaded: np.ndarray,
+    text_col: str,
+    file_path: Path = EMBEDDINGS_PATH,
+) -> np.ndarray:
+    if ids_to_generate.empty:
+        return np.array([])
+    
+    # generate embeddings for ids_to_generate
+    embeddings_generated = get_new_embeddings(df, ids_to_generate, text_col)
+
+    # to_save = loaded + generated
+    ids_to_save = ids_loaded + ids_to_generate
+    embeddings_to_save = embeddings_loaded + embeddings_generated
+
+    save_embeddings(ids_to_save, embeddings_to_save, file_path)
+
+    return embeddings_generated
+
+
+def get_intersecting_embeddings(
     ids_loaded: np.ndarray,
     embeddings_loaded: np.ndarray,
-    intersecting_ids: pd.Index,
-    ids_to_generate: pd.Index,
-    new_embeddings: np.ndarray,
-) -> dict[pd.Index, np.ndarray]:
-    """gets a dictionary with ids mapping to the new and loaded embeddings for df
-
-    Args:
-        ids_loaded (np.ndarray): loaded ids
-        embeddings_loaded (np.ndarray): loaded embeddings
-        intersecting_ids (pd.Index): intersecting ids
-        ids_to_generate (pd.Index): ids that require new generation
-        new_embeddings (np.ndarray): newly generated embeddings
-
-    Returns:
-        dict[pd.Index, np.ndarray]: embeddings_dict. contains all ids and embeddings for df
-    """
-    intersecting_ids_dict = {
-        id: emb
-        for id, emb in zip(ids_loaded, embeddings_loaded)
-        if id in intersecting_ids
-    }
-    new_embeddings_dict = dict(zip(ids_to_generate, new_embeddings))
-    embeddings_dict = intersecting_ids_dict | new_embeddings_dict
-
-    return embeddings_dict
+    ids_intersecting: pd.Index
+) -> np.ndarray:
+    return np.array([emb for id, emb in zip(ids_loaded, embeddings_loaded) if id in ids_intersecting])
 
 
 def get_embeddings_df(
-    embeddings_dict: dict[pd.Index, np.ndarray], text_col: str
-) -> pd.DataFrame:
-    """creates a df based on the input dic
-
-    Args:
-        embeddings_dict (dict[pd.Index, np.ndarray]): dict containing ids mapped to the corresponding embeddings
-        text_col (str): name of the text column
-
-    Returns:
-        pd.DataFrame: embeddings_df. the dataframe built from the input dict
-    """
-    embedding_dim = next(iter(embeddings_dict.values()), np.array([])).shape[0]
-    embeddings_df = pd.DataFrame.from_dict(
-        embeddings_dict,
-        orient="index",
-        columns=[f"{text_col}_{i}" for i in range(embedding_dim)],
+    ids_result: pd.Index,
+    embeddings_result: np.ndarray,
+    text_col: str
+):
+    return pd.DataFrame(
+        embeddings_result,
+        index=ids_result,
+        columns=[f"{text_col}_{i}" for i in range(embeddings_result.shape[1])],
     )
-
-    return embeddings_df
 
 
 def add_text_embeddings(
@@ -146,40 +191,64 @@ def add_text_embeddings(
     text_col: str = "title",
     file_path: Path = EMBEDDINGS_PATH,
 ) -> pd.DataFrame:
-    """adds text embeddings to the input df for the text_col, loading and saving embeddings from and to file_path
-
-    Args:
-        df (pd.DataFrame): input df
-        text_col (str, optional): name of the column containing text. Defaults to "title".
-        file_path (Path, optional): path to the stored embeddings. Defaults to EMBEDDINGS_DIR.
-
-    Returns:
-        pd.DataFrame: df with added embeddings
-    """
     ids_loaded, embeddings_loaded = load_ids_embeddings(file_path)
-    intersecting_ids, ids_to_generate = get_intersecting_complementing_ids(
+
+    ids_intersecting, ids_to_generate = get_intersecting_complementing_ids(
         df, ids_loaded
     )
 
-    new_embeddings = (
-        np.array([])
-        if ids_to_generate.empty
-        else get_new_embeddings(df, ids_to_generate, text_col)
+    embeddings_generated = get_and_save_generated_embeddings(
+        df, ids_loaded, ids_to_generate, embeddings_loaded, text_col
     )
 
-    embeddings_dict = get_embeddings_dict(
-        ids_loaded, embeddings_loaded, intersecting_ids, ids_to_generate, new_embeddings
+    embeddings_intersecting = get_intersecting_embeddings(
+        ids_loaded, embeddings_loaded, ids_intersecting
     )
 
-    # TODO: add to existing embeddings instead of replacing everything
-    if not ids_to_generate.empty:
-        save_embeddings(
-            list(embeddings_dict.keys()), list(embeddings_dict.values()), file_path
-        )
+    # result = intersecting + generated
+    ids_result = ids_intersecting + ids_to_generate
+    embeddings_result = embeddings_intersecting + embeddings_generated
 
-    embeddings_df = get_embeddings_df(embeddings_dict, text_col)
+    # create embeddings df for result
+    df_embeddings = pd.DataFrame(
+        embeddings_result,
+        index=ids_result,
+        columns=[f"{text_col}_{i}" for i in range(embeddings_result.shape[1])],
+    )
 
-    # merge by index with input df
-    df_result = df.combine_first(embeddings_df)
+    # merge into input df
+    df_result = df.combine_first(df_embeddings)
 
     return df_result
+
+
+    # embeddings_loaded_dict = dict(zip(ids_loaded, embeddings_loaded))
+
+    # if ids_to_generate.empty:
+    #     embeddings_generated = np.array([])
+    #     embeddings_new_dict = {}
+    # else:
+    #     embeddings_generated = get_new_embeddings(df, ids_to_generate, text_col)
+    #     embeddings_new_dict = dict(zip(ids_to_generate, embeddings_generated))
+
+    #     # result = intersecting + generated  # for return
+    #     # full = loaded + generated  # for saving
+    #     embeddings_full_dict = embeddings_loaded_dict | embeddings_new_dict
+    #     embeddings_full_dict = embeddings_new_dict | embeddings_loaded_dict
+
+    # embeddings_dict = get_embeddings_dict(
+    #     ids_loaded, embeddings_loaded, ids_intersecting, ids_to_generate, embeddings_generated
+    # )
+
+    # # TODO: add to existing embeddings instead of replacing everything
+    # if not ids_to_generate.empty:
+    #     save_embeddings(
+    #         list(embeddings_dict.keys()), list(embeddings_dict.values()), file_path
+    #     )
+
+    # embeddings_df = get_embeddings_df(embeddings_dict, text_col)
+
+    # # merge by index with input df
+    # df_result = df.combine_first(embeddings_df)
+
+    # return df_result
