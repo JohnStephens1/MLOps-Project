@@ -150,6 +150,17 @@ def add_text_embeddings(
     file_path: Path = EMBEDDINGS_PATH,
     embedding_dim: int = EMBEDDING_DIM,
 ) -> pd.DataFrame:
+    """adds text embeddings to the input_df, saving and loading embeddings as needed
+
+    Args:
+        df (pd.DataFrame): input df
+        text_col (str, optional): name of the column containing the text to be transformed. Defaults to "title".
+        file_path (Path, optional): path to the stored embeddings. Defaults to EMBEDDINGS_PATH.
+        embedding_dim (int, optional): output dimension of the used embedding. Defaults to EMBEDDING_DIM.
+
+    Returns:
+        pd.DataFrame: modified df
+    """
     ids_loaded, embeddings_loaded = load_ids_embeddings(file_path)
 
     ids_intersecting, ids_to_generate = get_intersecting_complementing_ids(
