@@ -101,6 +101,20 @@ def get_and_save_generated_embeddings(
     file_path: Path = EMBEDDINGS_PATH,
     embedding_dim: int = EMBEDDING_DIM,
 ) -> np.ndarray:
+    """gets generated embeddings, loading and saving as needed, preventing unnecessary generation while automatically saving newly generated embeddings
+
+    Args:
+        df (pd.DataFrame): input df
+        ids_loaded (np.ndarray): loaded ids
+        ids_to_generate (pd.Index): ids of rows for embedding generation
+        embeddings_loaded (np.ndarray): loaded embeddings
+        text_col (str): name of the column containing the text to be transformed
+        file_path (Path, optional): path to the stored embeddings. Defaults to EMBEDDINGS_PATH.
+        embedding_dim (int, optional): output dimension of the used embedding. Defaults to EMBEDDING_DIM.
+
+    Returns:
+        np.ndarray: the generated embeddings
+    """
     if ids_to_generate.empty:
         return np.empty((0, embedding_dim))
 
@@ -122,12 +136,19 @@ def get_intersecting_embeddings(
     ids_intersecting: pd.Index,
     embedding_dim: int = EMBEDDING_DIM,
 ) -> np.ndarray:
+    """gets all embeddings with ids in ids_intersecting
+
+    Args:
+        ids (np.ndarray): ids corresponding to embeddings
+        embeddings (np.ndarray): embeddings corresponding to ids
+        ids_intersecting (pd.Index): ids that must be present in both sets to include corresponding embeddings
+        embedding_dim (int, optional): output dimension of the used embedding. Defaults to EMBEDDING_DIM.
+
+    Returns:
+        np.ndarray: intersecting embeddings
+    """
     return np.array(
-        [
-            emb
-            for id, emb in zip(ids, embeddings)
-            if id in ids_intersecting
-        ]
+        [emb for id, emb in zip(ids, embeddings) if id in ids_intersecting]
     ).reshape(-1, embedding_dim)
 
 
@@ -137,6 +158,17 @@ def get_embeddings_df(
     text_col: str,
     embedding_dim: int = EMBEDDING_DIM,
 ) -> pd.DataFrame:
+    """gets a df containing input embeddings with ids as index
+
+    Args:
+        ids (pd.Index): index ids
+        embeddings (np.ndarray): embeddings
+        text_col (str): name of the output column name
+        embedding_dim (int, optional): output dimension of the used embedding. Defaults to EMBEDDING_DIM.
+
+    Returns:
+        pd.DataFrame: embeddings_df
+    """
     return pd.DataFrame(
         embeddings,
         index=ids,
