@@ -3,6 +3,9 @@ import pandas as pd
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from xgboost import XGBClassifier
 from text_classifier.data.data import data_pipeline, get_raw_dataset
 
 
@@ -24,22 +27,32 @@ def get_X_y(
     return X, y
 
 
+# def get_train_test_df(
+#     df: pd.DataFrame, target_col: str = "tag", test_size: float = 0.2, seed: int = 1234
+# ) -> tuple[pd.DataFrame, pd.DataFrame, np.typing.ArrayLike, np.typing.ArrayLike]:
+#     """Gets train and test dataframes
+
+#     Args:
+#         df (pd.DataFrame): the dataframe
+#         target_col (str, optional): the name of the target column. Defaults to "tag".
+#         test_size (float, optional): the proportion of the dataset to be used as the test set. Defaults to 0.2.
+#         seed (int, optional): the random seed. Defaults to 1234.
+
+#     Returns:
+#         tuple[pd.DataFrame, pd.DataFrame, np.typing.ArrayLike, np.typing.ArrayLike]: X_train, X_test, y_train, y_test. the train and test dataframes
+#     """
+#     X, y = get_X_y(df, target_col)
+
+#     X_train, X_test, y_train, y_test = train_test_split(
+#         X, y, stratify=y, test_size=test_size, random_state=seed
+#     )
+
+#     return X_train, X_test, y_train, y_test
+
+
 def get_train_test_df(
-    df: pd.DataFrame, target_col: str = "tag", test_size: float = 0.2, seed: int = 1234
+    X: pd.DataFrame, y: np.typing.ArrayLike, test_size: float = 0.2, seed: int = 1234
 ) -> tuple[pd.DataFrame, pd.DataFrame, np.typing.ArrayLike, np.typing.ArrayLike]:
-    """Gets train and test dataframes
-
-    Args:
-        df (pd.DataFrame): the dataframe
-        target_col (str, optional): the name of the target column. Defaults to "tag".
-        test_size (float, optional): the proportion of the dataset to be used as the test set. Defaults to 0.2.
-        seed (int, optional): the random seed. Defaults to 1234.
-
-    Returns:
-        tuple[pd.DataFrame, pd.DataFrame, np.typing.ArrayLike, np.typing.ArrayLike]: X_train, X_test, y_train, y_test. the train and test dataframes
-    """
-    X, y = get_X_y(df, target_col)
-
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, stratify=y, test_size=test_size, random_state=seed
     )
@@ -140,3 +153,60 @@ def get_model_data(
     #     "y_train": y_train,
     #     "y_test": y_test,
     # }
+
+
+def get_pre_pipe_model_data():
+    df = get_raw_dataset()
+    df = data_pipeline(df)
+    df = df.drop(["created_on", "title", "description", "text"], axis=1)
+
+    return df
+
+
+def get_encoded_y(y: np.typing.ArrayLike) -> tuple[LabelEncoder, np.typing.ArrayLike]:
+    label_encoder = LabelEncoder()
+    y_encoded = label_encoder.fit_transform(y)
+
+    return label_encoder, y_encoded
+
+
+def get_preprocessor(target_cols: list[str] = ["days_since_start"]):
+    return ColumnTransformer(
+        [
+            ("scaler", MinMaxScaler(), target_cols),
+        ],
+        remainder="passthrough",
+    )
+
+
+def nother_df_fn():
+    df = get_pre_pipe_model_data()
+
+    X, y = get_X_y(df)
+    label_encoder, y_encoded = get_encoded_y(y)
+
+    X_train, X_test, y_train, y_test = get_train_test_df(X, y_encoded)
+
+    pipe = get_model_pipe()
+
+
+    pass
+
+
+def smth_smth():
+    pass
+    # pre pipe
+    # separate into X, y
+    # apply label encoder to y
+
+
+# post pipe
+
+# label encoder somewhere
+# pipe something
+# potentially store encoder with pipe in dict
+# "joblib to dump model"
+
+
+# notes
+# params via
