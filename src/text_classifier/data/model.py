@@ -5,7 +5,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler
 from sklearn.compose import ColumnTransformer
 from text_classifier.data.data import data_pipeline, get_raw_dataset
-from text_classifier.model.model import get_model_pipe
 
 
 # OLD
@@ -183,18 +182,13 @@ def get_preprocessor(target_cols: list[str] = ["days_since_start"]):
     )
 
 
-def nother_df_fn():
+def get_encoder_train_test_df() -> tuple[
+    LabelEncoder, pd.DataFrame, pd.DataFrame, np.typing.ArrayLike, np.typing.ArrayLike
+]:
     df = get_pre_pipe_model_data()
-
     X, y = get_X_y(df)
+    
     label_encoder, y_encoded = get_encoded_y(y)
-
     X_train, X_test, y_train, y_test = get_train_test_df(X, y_encoded)
 
-    pipe = get_model_pipe()
-
-
-# post pipe
-
-# potentially store encoder with pipe in dict
-# "joblib to dump model"
+    return label_encoder, X_train, X_test, y_train, y_test
