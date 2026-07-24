@@ -4,10 +4,11 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from text_classifier.data.data import data_pipeline, get_raw_dataset
+from text_classifier.schema import TrainingData
 
 
 def get_pre_pipe_model_data(
-    drop_cols: list[str] = ["created_on", "title", "description", "text"]
+    drop_cols: list[str] = ["created_on", "title", "description", "text"],
 ) -> pd.DataFrame:
     df = get_raw_dataset()
     df = data_pipeline()
@@ -43,21 +44,20 @@ def get_encoded_y(y: np.typing.ArrayLike) -> tuple[LabelEncoder, np.typing.Array
 
 def get_train_test_df(
     X: pd.DataFrame, y: np.typing.ArrayLike, test_size: float = 0.2, seed: int = 1234
-) -> tuple[pd.DataFrame, pd.DataFrame, np.typing.ArrayLike, np.typing.ArrayLike]:
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, stratify=y, test_size=test_size, random_state=seed
+) -> TrainingData:
+
+    train_data = TrainingData(
+        *train_test_split(X, y, stratify=y, test_size=test_size, random_state=seed)
     )
 
-    return X_train, X_test, y_train, y_test
+    return train_data
 
 
-def get_encoder_train_test_df() -> tuple[
-    LabelEncoder, pd.DataFrame, pd.DataFrame, np.typing.ArrayLike, np.typing.ArrayLike
-]:
+def get_encoder_train_data() -> tuple[LabelEncoder, TrainingData]:
     df = get_pre_pipe_model_data()
     X, y = get_X_y(df)
 
     label_encoder, y_encoded = get_encoded_y(y)
-    X_train, X_test, y_train, y_test = get_train_test_df(X, y_encoded)
+    train_data = get_train_test_df(X, y_encoded)
 
-    return label_encoder, X_train, X_test, y_train, y_test
+    return label_encoder, train_data

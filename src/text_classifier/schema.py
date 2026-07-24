@@ -6,7 +6,7 @@ from sklearn.preprocessing import LabelEncoder
 
 
 @dataclass
-class Dataset:
+class TrainingData:
     X_train: pd.DataFrame
     X_test: pd.DataFrame
     y_train: np.typing.ArrayLike
@@ -21,5 +21,5 @@ class Artifacts:
 
 @dataclass
 class TrainingContext:
-    dataset: Dataset
+    dataset: TrainingData
     artifacts: Artifacts
