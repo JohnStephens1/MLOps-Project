@@ -4,7 +4,7 @@ import os
 
 from pathlib import Path
 from sentence_transformers import SentenceTransformer
-from text_classifier.config import EMBEDDINGS_PATH, EMBEDDING_MODEL_STR
+from text_classifier.config import EMBEDDING_DIM, EMBEDDINGS_PATH, EMBEDDING_MODEL_STR
 
 
 def save_embeddings(
@@ -24,7 +24,10 @@ def save_embeddings(
     np.savez(file_path, ids=ids, embeddings=embeddings, model=model)
 
 
-def load_ids_embeddings(file_path: Path = EMBEDDINGS_PATH) -> tuple[np.ndarray, np.ndarray]:
+def load_ids_embeddings(
+    file_path: Path = EMBEDDINGS_PATH,
+    embedding_dim: int = EMBEDDING_DIM,
+) -> tuple[np.ndarray, np.ndarray]:
     """loads the ids and embeddings stored in file_path
 
     Args:
@@ -34,7 +37,7 @@ def load_ids_embeddings(file_path: Path = EMBEDDINGS_PATH) -> tuple[np.ndarray, 
         tuple[np.ndarray, np.ndarray]: ids, embeddings
     """
     if not os.path.exists(file_path):
-        return np.array([]), np.array([])
+        return np.empty(0), np.empty((0, embedding_dim))
 
     loaded_file = np.load(file_path)
 
@@ -150,16 +153,24 @@ def get_and_save_generated_embeddings(
     embeddings_loaded: np.ndarray,
     text_col: str,
     file_path: Path = EMBEDDINGS_PATH,
+    embedding_dim: int = EMBEDDING_DIM,
 ) -> np.ndarray:
     if ids_to_generate.empty:
-        return np.array([])
-    
+        return np.empty((0, embedding_dim))
+
     # generate embeddings for ids_to_generate
     embeddings_generated = get_new_embeddings(df, ids_to_generate, text_col)
 
+    print(
+        f"ids_to_generate: {ids_to_generate.shape}\n"
+        f"embeddings_generated: {embeddings_generated.shape}"
+    )
+    print(f"ids_loaded: {ids_loaded.shape}\n")
+    print(f"embeddings_loaded: {embeddings_loaded.shape}\n")
+
     # to_save = loaded + generated
-    ids_to_save = ids_loaded + ids_to_generate
-    embeddings_to_save = embeddings_loaded + embeddings_generated
+    ids_to_save = np.concat([ids_loaded, ids_to_generate])
+    embeddings_to_save = np.concat([embeddings_loaded, embeddings_generated])
 
     save_embeddings(ids_to_save, embeddings_to_save, file_path)
 
@@ -169,20 +180,31 @@ def get_and_save_generated_embeddings(
 def get_intersecting_embeddings(
     ids_loaded: np.ndarray,
     embeddings_loaded: np.ndarray,
-    ids_intersecting: pd.Index
+    ids_intersecting: pd.Index,
+    embedding_dim: int = EMBEDDING_DIM,
 ) -> np.ndarray:
-    return np.array([emb for id, emb in zip(ids_loaded, embeddings_loaded) if id in ids_intersecting])
+    print(f"ids_intersecting: {ids_intersecting.shape}")
+    print(f"ids_loaded: {ids_loaded.shape}")
+    print(f"embeddings_loaded: {embeddings_loaded.shape}")
+    return np.array(
+        [
+            emb
+            for id, emb in zip(ids_loaded, embeddings_loaded)
+            if id in ids_intersecting
+        ]
+    ).reshape(-1, embedding_dim)
 
 
 def get_embeddings_df(
     ids_result: pd.Index,
     embeddings_result: np.ndarray,
-    text_col: str
+    text_col: str,
+    embedding_dim: int = EMBEDDING_DIM,
 ):
     return pd.DataFrame(
         embeddings_result,
         index=ids_result,
-        columns=[f"{text_col}_{i}" for i in range(embeddings_result.shape[1])],
+        columns=[f"{text_col}_{i}" for i in range(embedding_dim)],
     )
 
 
@@ -190,6 +212,7 @@ def add_text_embeddings(
     df: pd.DataFrame,
     text_col: str = "title",
     file_path: Path = EMBEDDINGS_PATH,
+    embedding_dim: int = EMBEDDING_DIM,
 ) -> pd.DataFrame:
     ids_loaded, embeddings_loaded = load_ids_embeddings(file_path)
 
@@ -205,22 +228,32 @@ def add_text_embeddings(
         ids_loaded, embeddings_loaded, ids_intersecting
     )
 
+    print(
+        f"ids_intersecting: {ids_intersecting.shape}\n"
+        f"ids_to_generate: {ids_to_generate.shape}\n"
+        f"embeddings_generated: {embeddings_generated.shape}\n"
+        f"embeddings_intersecting: {embeddings_intersecting.shape}\n"
+    )
+
     # result = intersecting + generated
-    ids_result = ids_intersecting + ids_to_generate
-    embeddings_result = embeddings_intersecting + embeddings_generated
+    ids_result = np.concat([ids_intersecting, ids_to_generate])
+    embeddings_result = np.concat([embeddings_intersecting, embeddings_generated])
+
+    print(
+        f"ids_result: {ids_result.shape}\nembeddings_result: {embeddings_result.shape}"
+    )
 
     # create embeddings df for result
     df_embeddings = pd.DataFrame(
         embeddings_result,
         index=ids_result,
-        columns=[f"{text_col}_{i}" for i in range(embeddings_result.shape[1])],
+        columns=[f"{text_col}_{i}" for i in range(embedding_dim)],
     )
 
     # merge into input df
     df_result = df.combine_first(df_embeddings)
 
     return df_result
-
 
     # embeddings_loaded_dict = dict(zip(ids_loaded, embeddings_loaded))
 

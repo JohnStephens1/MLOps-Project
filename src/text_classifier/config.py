@@ -8,3 +8,4 @@ DATASET_PATH = PROJECT_ROOT / "datasets/dataset.csv"
 EMBEDDINGS_PATH = PROJECT_ROOT / "data/embeddings/text_embeddings.npz"
 
 EMBEDDING_MODEL_STR = "all-MiniLM-L6-v2"
+EMBEDDING_DIM = 384
