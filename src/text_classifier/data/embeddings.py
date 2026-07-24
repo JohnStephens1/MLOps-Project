@@ -136,7 +136,7 @@ def get_embeddings_df(
     embeddings: np.ndarray,
     text_col: str,
     embedding_dim: int = EMBEDDING_DIM,
-):
+) -> pd.DataFrame:
     return pd.DataFrame(
         embeddings,
         index=ids,
