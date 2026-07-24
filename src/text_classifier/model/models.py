@@ -6,20 +6,18 @@ from scipy.stats import randint, uniform, loguniform  # type: ignore
 def get_xgboost_param_distribution() -> dict[str, Any]:
     return {
         # Tree complexity
-        "max_depth": randint(3, 11),
-        "min_child_weight": randint(1, 10),
+        "model__max_depth": randint(3, 11),
+        "model__min_child_weight": randint(1, 10),
         # Learning
-        "learning_rate": loguniform(1e-3, 3e-1),
-        "n_estimators": randint(100, 1000),
+        "model__learning_rate": loguniform(1e-3, 3e-1),
+        "model__n_estimators": randint(100, 1000),
         # Row/column sampling
-        "subsample": uniform(0.5, 0.5),  # 0.5 - 1.0
-        "colsample_bytree": uniform(0.5, 0.5),  # 0.5 - 1.0
+        "model__subsample": uniform(0.5, 0.5),  # 0.5 - 1.0
+        "model__colsample_bytree": uniform(0.5, 0.5),  # 0.5 - 1.0
         # Regularization
-        "gamma": uniform(0, 5),
-        "reg_alpha": loguniform(1e-4, 10),
-        "reg_lambda": loguniform(1e-3, 100),
-        # Optional
-        "scale_pos_weight": uniform(0.5, 4.5),  # useful if classes are imbalanced
+        "model__gamma": uniform(0, 5),
+        "model__reg_alpha": loguniform(1e-4, 10),
+        "model__reg_lambda": loguniform(1e-3, 100),
     }
 
 
