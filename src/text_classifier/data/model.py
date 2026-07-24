@@ -7,7 +7,7 @@ from sklearn.compose import ColumnTransformer
 from text_classifier.data.data import data_pipeline, get_raw_dataset
 
 
-def get_pre_pipe_model_data():
+def get_pre_pipe_model_data() -> pd.DataFrame:
     df = get_raw_dataset()
     df = data_pipeline(df)
     df = df.drop(["created_on", "title", "description", "text"], axis=1)
@@ -50,7 +50,9 @@ def get_train_test_df(
     return X_train, X_test, y_train, y_test
 
 
-def get_preprocessor(target_cols: list[str] = ["days_since_start"]):
+def get_preprocessor(
+    target_cols: list[str] = ["days_since_start"],
+) -> ColumnTransformer:
     return ColumnTransformer(
         [
             ("scaler", MinMaxScaler(), target_cols),
